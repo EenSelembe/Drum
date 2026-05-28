@@ -28,11 +28,31 @@ th, td {
 
 th { background: #1e1e1e; }
 
+/* INPUT UMUM */
 input {
   background: #1e1e1e;
   color: white;
   border: none;
   text-align: center;
+  font-size: 16px; /* angka lebih besar */
+}
+
+/* KHUSUS JUMLAH */
+.input-jumlah {
+  width: 45px;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* KHUSUS NAMA */
+.input-nama {
+  width: 120px;
+  text-transform: uppercase;
+}
+
+/* CHECKBOX BIAR BESAR */
+input[type="checkbox"] {
+  transform: scale(1.2);
 }
 
 button {
@@ -90,7 +110,9 @@ import {
   updateDoc,
   doc,
   deleteDoc,
-  getDoc
+  getDoc,
+  query,
+  orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -122,19 +144,23 @@ window.logout = function(){
   location.href="index.html";
 }
 
-// TAMBAH
+// TAMBAH DATA
 document.getElementById("btnTambah").onclick = async ()=>{
   if(role!=="admin") return;
 
   await addDoc(collection(db,"drum"),{
     nama:"",
     jumlah:0,
-    ceklis:Array(40).fill(false)
+    ceklis:Array(40).fill(false),
+    createdAt: Date.now()
   });
 };
 
+// QUERY URUT
+const q = query(collection(db,"drum"), orderBy("createdAt","asc"));
+
 // REALTIME
-onSnapshot(collection(db,"drum"), snapshot => {
+onSnapshot(q, snapshot => {
 
   const table = document.getElementById("tableBody");
   table.innerHTML = "";
@@ -148,28 +174,35 @@ onSnapshot(collection(db,"drum"), snapshot => {
 
     const tr = document.createElement("tr");
 
-    // NAMA
+    // ===== NAMA =====
     const nama = document.createElement("input");
     nama.value = data.nama;
+    nama.classList.add("input-nama");
+
     if(role==="user") nama.disabled = true;
 
     nama.onchange = ()=>{
-      updateDoc(doc(db,"drum",id), { nama: nama.value });
+      updateDoc(doc(db,"drum",id), {
+        nama: nama.value.toUpperCase()
+      });
     };
 
     const tdNama = document.createElement("td");
     tdNama.appendChild(nama);
     tr.appendChild(tdNama);
 
-    // JUMLAH
+    // ===== JUMLAH =====
     const jumlah = document.createElement("input");
     jumlah.type="number";
     jumlah.value = data.jumlah;
+    jumlah.classList.add("input-jumlah");
 
     if(role==="user") jumlah.disabled = true;
 
     jumlah.onchange = ()=>{
-      updateDoc(doc(db,"drum",id), { jumlah: parseInt(jumlah.value)||0 });
+      updateDoc(doc(db,"drum",id), {
+        jumlah: parseInt(jumlah.value)||0
+      });
     };
 
     const tdJumlah = document.createElement("td");
