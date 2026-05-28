@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>DATA DRUM</title>
+  <title>DATA DRUM ONLINE</title>
   <style>
     body {
       font-family: Arial;
@@ -22,264 +22,173 @@
       text-align: center;
       min-width: 60px;
     }
-    th {
-      background-color: #1e1e1e;
-    }
-    input[type="text"], input[type="number"] {
-      width: 100%;
-      border: none;
-      outline: none;
-      text-align: center;
-      background-color: #1e1e1e;
-      color: #fff;
-    }
-    input[type="checkbox"] {
-      transform: scale(1.2);
-    }
-    button {
-      background-color: #333;
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      cursor: pointer;
-      border-radius: 5px;
-      margin-left: 10px;
-    }
-    button:hover {
-      background-color: #555;
-    }
-    .total-box {
-      color: #00ffcc;
-      font-weight: bold;
-    }
+    th { background-color: #1e1e1e; }
+    input { background:#1e1e1e; color:#fff; border:none; text-align:center; }
+    button { padding:8px; border:none; border-radius:5px; cursor:pointer; }
   </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<div style="display:flex; justify-content:space-between; align-items:center;">
-  <h2>DATA PENGISIAN DRUM</h2>
+<div style="display:flex; justify-content:space-between;">
+  <h2>DATA DRUM ONLINE</h2>
   <div>
     <span id="infoUser"></span>
     <button onclick="logout()" style="background:red;">Logout</button>
   </div>
 </div>
 
-<button id="btnHapus" onclick="tampilkanKonfirmasi()">Hapus Semua</button>
+<button id="btnTambah" onclick="tambahBaris()">Tambah Baris</button>
 
 <table>
-  <thead>
-    <tr>
-      <th>Nama</th>
-      <th>Jumlah</th>
-      <script>
-        for (let i = 1; i <= 20; i++) {
-          document.write("<th>" + i + "</th>");
-        }
-      </script>
-      <th>Total</th>
-    </tr>
-  </thead>
-  <tbody id="tableBody"></tbody>
+<thead>
+<tr>
+<th>Nama</th>
+<th>Jumlah</th>
+<script>
+for (let i=1;i<=20;i++){document.write("<th>"+i+"</th>")}
+</script>
+<th>Total</th>
+</tr>
+</thead>
+<tbody id="tableBody"></tbody>
 </table>
-
-<br>
-<button id="btnTambah" onclick="tambahBaris()">Tambah Baris</button>
 
 <h3>Total Semua: <span id="grandTotal">0</span></h3>
 
-<!-- POPUP -->
-<div id="popup" style="
-  display:none;
-  position:fixed;
-  top:0; left:0;
-  width:100%; height:100%;
-  background:rgba(0,0,0,0.7);
-  justify-content:center;
-  align-items:center;
-">
-  <div style="
-    background:#1e1e1e;
-    padding:20px;
-    border-radius:10px;
-    text-align:center;
-  ">
-    <p>Yakin mau hapus semua data?</p>
-    <button onclick="hapusSemua()">Ya</button>
-    <button onclick="tutupPopup()">Tidak</button>
-  </div>
-</div>
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
+  authDomain: "drum-26d1c.firebaseapp.com",
+  projectId: "drum-26d1c",
+  storageBucket: "drum-26d1c.firebasestorage.app",
+  messagingSenderId: "960892789351",
+  appId: "1:960892789351:web:ca1c653c85cab59586eac2"
+};
 
-// ===== LOGIN CHECK (ANTI LOOP) =====
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ===== ROLE =====
 let role = localStorage.getItem("role");
+if (!role) location.href="index.html";
 
-if (role !== "admin" && role !== "user") {
-  localStorage.removeItem("role");
-  window.location.href = "index.html";
+document.getElementById("infoUser").textContent = "Login: "+role;
+if(role==="user"){
+  document.getElementById("btnTambah").style.display="none";
 }
-
-// tampilkan info user
-document.getElementById("infoUser").textContent = "Login sebagai: " + role;
 
 // ===== LOGOUT =====
-function logout(){
+window.logout = function(){
   localStorage.clear();
-  window.location.href = "index.html";
+  location.href="index.html";
 }
 
-// ===== SIMPAN DATA =====
-function simpanData() {
-  const data = [];
-  document.querySelectorAll("#tableBody tr").forEach(row => {
-    const nama = row.querySelector("input[type=text]").value;
-    const jumlah = row.querySelector("input[type=number]").value;
+// ===== TAMBAH DATA =====
+window.tambahBaris = async function(){
+  if(role!=="admin") return;
 
-    const ceklis = [];
-    row.querySelectorAll("input[type=checkbox]").forEach(cb => {
-      ceklis.push(cb.checked);
-    });
-
-    data.push({ nama, jumlah, ceklis });
+  await addDoc(collection(db,"drum"),{
+    nama:"",
+    jumlah:0,
+    ceklis:Array(40).fill(false)
   });
-
-  localStorage.setItem("dataDrum", JSON.stringify(data));
 }
 
-// ===== LOAD DATA =====
-function loadData() {
-  const data = JSON.parse(localStorage.getItem("dataDrum")) || [];
-  data.forEach(item => tambahBaris(item));
+// ===== LOAD REALTIME =====
+onSnapshot(collection(db,"drum"), snapshot=>{
+  const table=document.getElementById("tableBody");
+  table.innerHTML="";
+  let grand=0;
 
-  // kalau user biasa → sembunyikan tombol
-  if (role === "user") {
-    document.getElementById("btnTambah").style.display = "none";
-    document.getElementById("btnHapus").style.display = "none";
-  }
-}
+  snapshot.forEach(docSnap=>{
+    const data=docSnap.data();
+    const id=docSnap.id;
 
-// ===== HITUNG TOTAL =====
-function hitungSemua() {
-  let total = 0;
-  document.querySelectorAll(".row-total").forEach(el => {
-    total += parseFloat(el.textContent) || 0;
-  });
-  document.getElementById("grandTotal").textContent = total;
-}
+    const row=document.createElement("tr");
 
-// ===== TAMBAH BARIS =====
-function tambahBaris(data = null) {
+    // nama
+    const nama=document.createElement("input");
+    nama.value=data.nama;
+    if(role==="user") nama.disabled=true;
+    nama.oninput=()=>updateField(id,"nama",nama.value);
 
-  if (role === "user" && !data) return;
+    const tdNama=document.createElement("td");
+    tdNama.appendChild(nama);
+    row.appendChild(tdNama);
 
-  const table = document.getElementById("tableBody");
-  const row = document.createElement("tr");
+    // jumlah
+    const jumlah=document.createElement("input");
+    jumlah.type="number";
+    jumlah.value=data.jumlah;
+    if(role==="user") jumlah.disabled=true;
+    jumlah.oninput=()=>updateField(id,"jumlah",parseInt(jumlah.value)||0);
 
-  // Nama
-  const namaCell = document.createElement("td");
-  const inputNama = document.createElement("input");
-  inputNama.type = "text";
-  inputNama.value = data ? data.nama : "";
-  inputNama.oninput = simpanData;
+    const tdJumlah=document.createElement("td");
+    tdJumlah.appendChild(jumlah);
+    row.appendChild(tdJumlah);
 
-  if (role === "user") inputNama.disabled = true;
+    let total=0;
 
-  namaCell.appendChild(inputNama);
-  row.appendChild(namaCell);
+    for(let i=0;i<20;i++){
+      const td=document.createElement("td");
 
-  // Jumlah
-  const jumlahCell = document.createElement("td");
-  const inputJumlah = document.createElement("input");
-  inputJumlah.type = "number";
-  inputJumlah.min = 0;
-  inputJumlah.max = 20;
-  inputJumlah.value = data ? data.jumlah : 0;
+      const c1=document.createElement("input");
+      const c2=document.createElement("input");
+      c1.type=c2.type="checkbox";
 
-  if (role === "user") inputJumlah.disabled = true;
+      c1.checked=data.ceklis[i*2];
+      c2.checked=data.ceklis[i*2+1];
 
-  jumlahCell.appendChild(inputJumlah);
-  row.appendChild(jumlahCell);
+      c1.onchange=()=>updateCeklis(id,i*2,c1.checked);
+      c2.onchange=()=>updateCeklis(id,i*2+1,c2.checked);
 
-  let checkboxCells = [];
-  let checkboxes = [];
+      if(c1.checked) total+=0.5;
+      if(c2.checked) total+=0.5;
 
-  for (let i = 0; i < 20; i++) {
-    const cell = document.createElement("td");
+      td.appendChild(c1);
+      td.appendChild(document.createElement("br"));
+      td.appendChild(c2);
 
-    const cek1 = document.createElement("input");
-    cek1.type = "checkbox";
+      if(i>=data.jumlah) td.style.display="none";
 
-    const cek2 = document.createElement("input");
-    cek2.type = "checkbox";
-
-    if (data && data.ceklis) {
-      cek1.checked = data.ceklis[i * 2];
-      cek2.checked = data.ceklis[i * 2 + 1];
+      row.appendChild(td);
     }
 
-    cek1.onchange = updateTotal;
-    cek2.onchange = updateTotal;
+    const tdTotal=document.createElement("td");
+    tdTotal.textContent=total;
+    row.appendChild(tdTotal);
 
-    checkboxes.push(cek1, cek2);
+    grand+=total;
+    table.appendChild(row);
+  });
 
-    cell.appendChild(cek1);
-    cell.appendChild(document.createElement("br"));
-    cell.appendChild(cek2);
+  document.getElementById("grandTotal").textContent=grand;
+});
 
-    row.appendChild(cell);
-    checkboxCells.push(cell);
-  }
-
-  // total per baris
-  const totalCell = document.createElement("td");
-  totalCell.className = "row-total total-box";
-  totalCell.textContent = "0";
-  row.appendChild(totalCell);
-
-  function updateTotal() {
-    let total = 0;
-    checkboxes.forEach(cb => {
-      if (cb.checked) total += 0.5;
-    });
-    totalCell.textContent = total;
-    hitungSemua();
-    simpanData();
-  }
-
-  // kontrol jumlah kolom aktif
-  inputJumlah.oninput = function() {
-    let jumlah = parseInt(this.value) || 0;
-
-    checkboxCells.forEach((cell, index) => {
-      cell.style.display = index < jumlah ? "" : "none";
-    });
-
-    simpanData();
-  };
-
-  table.appendChild(row);
-
-  inputJumlah.dispatchEvent(new Event("input"));
-  updateTotal();
+// ===== UPDATE FIELD =====
+async function updateField(id,field,value){
+  await updateDoc(doc(db,"drum",id),{[field]:value});
 }
 
-// ===== POPUP =====
-function tampilkanKonfirmasi() {
-  document.getElementById("popup").style.display = "flex";
-}
-function tutupPopup() {
-  document.getElementById("popup").style.display = "none";
-}
-function hapusSemua() {
-  document.getElementById("tableBody").innerHTML = "";
-  document.getElementById("grandTotal").textContent = "0";
-  localStorage.removeItem("dataDrum");
-  tutupPopup();
-}
+// ===== UPDATE CEKLIS =====
+async function updateCeklis(id,index,value){
+  const ref=doc(db,"drum",id);
+  const snap=await ref.get?.(); // fallback
+  let arr=[];
 
-// ===== INIT =====
-window.onload = loadData;
+  // safer
+  onSnapshot(ref, d=>{
+    arr=d.data().ceklis;
+  });
+
+  arr[index]=value;
+
+  await updateDoc(ref,{ceklis:arr});
+}
 
 </script>
 
