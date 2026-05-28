@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>DATA DRUM</title>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+      background-color: #121212;
+      color: #ffffff;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+    }
+    th, td {
+      border: 1px solid #444;
+      padding: 6px;
+      text-align: center;
+      min-width: 60px;
+    }
+    th {
+      background-color: #1e1e1e;
+    }
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      border: none;
+      outline: none;
+      text-align: center;
+      background-color: #1e1e1e;
+      color: #fff;
+    }
+    input[type="checkbox"] {
+      transform: scale(1.2);
+    }
+    button {
+      background-color: #333;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+      border-radius: 5px;
+      margin-left: 10px;
+    }
+    button:hover {
+      background-color: #555;
+    }
+    .total-box {
+      color: #00ffcc;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<h2>
+  DATA PENGISIAN DRUM 
+  <button onclick="tampilkanKonfirmasi()">Hapus Semua</button>
+</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Nama</th>
+      <th>Jumlah</th>
+      <script>
+        for (let i = 1; i <= 20; i++) {
+          document.write("<th>" + i + "</th>");
+        }
+      </script>
+      <th>Total</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+
+<br>
+<button onclick="tambahBaris()">Tambah Baris</button>
+
+<h3>Total Semua: <span id="grandTotal">0</span></h3>
+
+<!-- POPUP -->
+<div id="popup" style="
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.7);
+  justify-content:center;
+  align-items:center;
+">
+  <div style="
+    background:#1e1e1e;
+    padding:20px;
+    border-radius:10px;
+    text-align:center;
+  ">
+    <p>Yakin mau hapus semua data?</p>
+    <button onclick="hapusSemua()">Ya</button>
+    <button onclick="tutupPopup()">Tidak</button>
+  </div>
+</div>
+
+<script>
+// SIMPAN
+function simpanData() {
+  const data = [];
+  document.querySelectorAll("#tableBody tr").forEach(row => {
+    const nama = row.querySelector("input[type=text]").value;
+    const jumlah = row.querySelector("input[type=number]").value;
+
+    const ceklis = [];
+    row.querySelectorAll("input[type=checkbox]").forEach(cb => {
+      ceklis.push(cb.checked);
+    });
+
+    data.push({ nama, jumlah, ceklis });
+  });
+
+  localStorage.setItem("dataDrum", JSON.stringify(data));
+}
+
+// LOAD
+function loadData() {
+  const data = JSON.parse(localStorage.getItem("dataDrum")) || [];
+  data.forEach(item => tambahBaris(item));
+}
+
+// HITUNG TOTAL SEMUA
+function hitungSemua() {
+  let total = 0;
+  document.querySelectorAll(".row-total").forEach(el => {
+    total += parseFloat(el.textContent) || 0;
+  });
+  document.getElementById("grandTotal").textContent = total;
+}
+
+// TAMBAH BARIS
+function tambahBaris(data = null) {
+  const table = document.getElementById("tableBody");
+  const row = document.createElement("tr");
+
+  // Nama
+  const namaCell = document.createElement("td");
+  const inputNama = document.createElement("input");
+  inputNama.type = "text";
+  inputNama.value = data ? data.nama : "";
+  inputNama.oninput = simpanData;
+  namaCell.appendChild(inputNama);
+  row.appendChild(namaCell);
+
+  // Jumlah
+  const jumlahCell = document.createElement("td");
+  const inputJumlah = document.createElement("input");
+  inputJumlah.type = "number";
+  inputJumlah.min = 0;
+  inputJumlah.max = 20;
+  inputJumlah.value = data ? data.jumlah : 0;
+  jumlahCell.appendChild(inputJumlah);
+  row.appendChild(jumlahCell);
+
+  let checkboxCells = [];
+  let checkboxes = [];
+
+  for (let i = 0; i < 20; i++) {
+    const cell = document.createElement("td");
+
+    const cek1 = document.createElement("input");
+    cek1.type = "checkbox";
+
+    const cek2 = document.createElement("input");
+    cek2.type = "checkbox";
+
+    if (data && data.ceklis) {
+      cek1.checked = data.ceklis[i * 2];
+      cek2.checked = data.ceklis[i * 2 + 1];
+    }
+
+    cek1.onchange = updateTotal;
+    cek2.onchange = updateTotal;
+
+    checkboxes.push(cek1, cek2);
+
+    cell.appendChild(cek1);
+    cell.appendChild(document.createElement("br"));
+    cell.appendChild(cek2);
+
+    row.appendChild(cell);
+    checkboxCells.push(cell);
+  }
+
+  // Total per baris
+  const totalCell = document.createElement("td");
+  totalCell.className = "row-total total-box";
+  totalCell.textContent = "0";
+  row.appendChild(totalCell);
+
+  // Update total
+  function updateTotal() {
+    let total = 0;
+    checkboxes.forEach(cb => {
+      if (cb.checked) total += 0.5;
+    });
+    totalCell.textContent = total;
+    hitungSemua();
+    simpanData();
+  }
+
+  // Jumlah kolom aktif
+  inputJumlah.oninput = function() {
+    let jumlah = parseInt(this.value) || 0;
+
+    checkboxCells.forEach((cell, index) => {
+      cell.style.display = index < jumlah ? "" : "none";
+    });
+
+    simpanData();
+  };
+
+  table.appendChild(row);
+
+  inputJumlah.dispatchEvent(new Event("input"));
+  updateTotal();
+}
+
+// POPUP
+function tampilkanKonfirmasi() {
+  document.getElementById("popup").style.display = "flex";
+}
+function tutupPopup() {
+  document.getElementById("popup").style.display = "none";
+}
+function hapusSemua() {
+  document.getElementById("tableBody").innerHTML = "";
+  document.getElementById("grandTotal").textContent = "0";
+  localStorage.removeItem("dataDrum");
+  tutupPopup();
+}
+
+// LOAD SAAT BUKA
+window.onload = loadData;
+</script>
+
+</body>
+</html>
