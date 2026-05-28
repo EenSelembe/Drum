@@ -112,23 +112,24 @@
 
 <script>
 
-// ================= LOGIN CHECK =================
+// ===== LOGIN CHECK (ANTI LOOP) =====
 let role = localStorage.getItem("role");
 
-if (!role) {
-  window.location.href = "index.html";
-}
-
-// tampilkan user
-document.getElementById("infoUser").textContent = "Login sebagai: " + role;
-
-// ================= LOGOUT =================
-function logout(){
+if (role !== "admin" && role !== "user") {
   localStorage.removeItem("role");
   window.location.href = "index.html";
 }
 
-// ================= SIMPAN =================
+// tampilkan info user
+document.getElementById("infoUser").textContent = "Login sebagai: " + role;
+
+// ===== LOGOUT =====
+function logout(){
+  localStorage.clear();
+  window.location.href = "index.html";
+}
+
+// ===== SIMPAN DATA =====
 function simpanData() {
   const data = [];
   document.querySelectorAll("#tableBody tr").forEach(row => {
@@ -146,19 +147,19 @@ function simpanData() {
   localStorage.setItem("dataDrum", JSON.stringify(data));
 }
 
-// ================= LOAD =================
+// ===== LOAD DATA =====
 function loadData() {
   const data = JSON.parse(localStorage.getItem("dataDrum")) || [];
   data.forEach(item => tambahBaris(item));
 
-  // jika user biasa → disable tombol
+  // kalau user biasa → sembunyikan tombol
   if (role === "user") {
     document.getElementById("btnTambah").style.display = "none";
     document.getElementById("btnHapus").style.display = "none";
   }
 }
 
-// ================= HITUNG =================
+// ===== HITUNG TOTAL =====
 function hitungSemua() {
   let total = 0;
   document.querySelectorAll(".row-total").forEach(el => {
@@ -167,7 +168,7 @@ function hitungSemua() {
   document.getElementById("grandTotal").textContent = total;
 }
 
-// ================= TAMBAH BARIS =================
+// ===== TAMBAH BARIS =====
 function tambahBaris(data = null) {
 
   if (role === "user" && !data) return;
@@ -230,6 +231,7 @@ function tambahBaris(data = null) {
     checkboxCells.push(cell);
   }
 
+  // total per baris
   const totalCell = document.createElement("td");
   totalCell.className = "row-total total-box";
   totalCell.textContent = "0";
@@ -245,6 +247,7 @@ function tambahBaris(data = null) {
     simpanData();
   }
 
+  // kontrol jumlah kolom aktif
   inputJumlah.oninput = function() {
     let jumlah = parseInt(this.value) || 0;
 
@@ -261,7 +264,7 @@ function tambahBaris(data = null) {
   updateTotal();
 }
 
-// ================= POPUP =================
+// ===== POPUP =====
 function tampilkanKonfirmasi() {
   document.getElementById("popup").style.display = "flex";
 }
@@ -275,7 +278,7 @@ function hapusSemua() {
   tutupPopup();
 }
 
-// ================= INIT =================
+// ===== INIT =====
 window.onload = loadData;
 
 </script>
