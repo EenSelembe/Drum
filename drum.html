@@ -171,7 +171,9 @@ onSnapshot(q, snapshot => {
     const dex = data.dex || Array.from({length:20},()=>({cek:false}));
 
     let totalCeklis = 0;
-    let totalDexItem = 0;
+
+    // 🔥 penting: total dex dalam satuan 50
+    let totalDex = 0;
 
     const tr = document.createElement("tr");
 
@@ -215,7 +217,7 @@ onSnapshot(q, snapshot => {
       td.appendChild(c1);
       td.appendChild(c2);
 
-      // DEX FIX
+      // DEX FIX FINAL
       const dexBox = document.createElement("div");
       dexBox.className="dex-box";
 
@@ -225,8 +227,9 @@ onSnapshot(q, snapshot => {
 
       dexCek.onchange=()=>updateDex(id,i,"cek",dexCek.checked);
 
+      // ✔ 1 centang = 50 (tampilan)
       if(dex[i]?.cek){
-        totalDexItem += 1;
+        totalDex += 50;
       }
 
       dexBox.appendChild(dexCek);
@@ -239,13 +242,16 @@ onSnapshot(q, snapshot => {
       tr.appendChild(td);
     }
 
-    // 💰 RUMUS FINAL BENAR
+    // 💰 HITUNG UANG FINAL
     const uangCeklis = totalCeklis * 100 * 6800;
-    const uangDex = totalDexItem * 50000;
+
+    // totalDex = 50 per centang → jadi jumlah centang = totalDex/50
+    const uangDex = (totalDex / 50) * 50000;
+
     const uang = uangCeklis + uangDex;
 
     tr.appendChild(tdWrap(totalCeklis));
-    tr.appendChild(tdWrap(totalDexItem));
+    tr.appendChild(tdWrap(totalDex));
     tr.appendChild(tdWrap(uang.toLocaleString("id-ID")));
 
     grand += uang;
