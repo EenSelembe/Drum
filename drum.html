@@ -56,9 +56,11 @@
 </head>
 <body>
 
+<h3 id="infoUser"></h3>
+
 <h2>
   DATA PENGISIAN DRUM 
-  <button onclick="tampilkanKonfirmasi()">Hapus Semua</button>
+  <button id="btnHapus" onclick="tampilkanKonfirmasi()">Hapus Semua</button>
 </h2>
 
 <table>
@@ -78,7 +80,7 @@
 </table>
 
 <br>
-<button onclick="tambahBaris()">Tambah Baris</button>
+<button id="btnTambah" onclick="tambahBaris()">Tambah Baris</button>
 
 <h3>Total Semua: <span id="grandTotal">0</span></h3>
 
@@ -105,7 +107,21 @@
 </div>
 
 <script>
-// SIMPAN
+
+// ================= LOGIN CHECK =================
+let user = JSON.parse(localStorage.getItem("user"));
+
+if(!user){
+  window.location.href = "index.html";
+}
+
+let isAdmin = user.role === "admin";
+
+// tampilkan info user
+document.getElementById("infoUser").innerText =
+  "Login sebagai: " + user.username + " (" + user.role + ")";
+
+// ================= SIMPAN =================
 function simpanData() {
   const data = [];
   document.querySelectorAll("#tableBody tr").forEach(row => {
@@ -123,13 +139,13 @@ function simpanData() {
   localStorage.setItem("dataDrum", JSON.stringify(data));
 }
 
-// LOAD
+// ================= LOAD =================
 function loadData() {
   const data = JSON.parse(localStorage.getItem("dataDrum")) || [];
   data.forEach(item => tambahBaris(item));
 }
 
-// HITUNG TOTAL SEMUA
+// ================= HITUNG =================
 function hitungSemua() {
   let total = 0;
   document.querySelectorAll(".row-total").forEach(el => {
@@ -138,7 +154,7 @@ function hitungSemua() {
   document.getElementById("grandTotal").textContent = total;
 }
 
-// TAMBAH BARIS
+// ================= TAMBAH BARIS =================
 function tambahBaris(data = null) {
   const table = document.getElementById("tableBody");
   const row = document.createElement("tr");
@@ -148,7 +164,13 @@ function tambahBaris(data = null) {
   const inputNama = document.createElement("input");
   inputNama.type = "text";
   inputNama.value = data ? data.nama : "";
-  inputNama.oninput = simpanData;
+
+  if(isAdmin){
+    inputNama.oninput = simpanData;
+  }else{
+    inputNama.disabled = true;
+  }
+
   namaCell.appendChild(inputNama);
   row.appendChild(namaCell);
 
@@ -159,6 +181,11 @@ function tambahBaris(data = null) {
   inputJumlah.min = 0;
   inputJumlah.max = 20;
   inputJumlah.value = data ? data.jumlah : 0;
+
+  if(!isAdmin){
+    inputJumlah.disabled = true;
+  }
+
   jumlahCell.appendChild(inputJumlah);
   row.appendChild(jumlahCell);
 
@@ -192,13 +219,12 @@ function tambahBaris(data = null) {
     checkboxCells.push(cell);
   }
 
-  // Total per baris
+  // Total
   const totalCell = document.createElement("td");
   totalCell.className = "row-total total-box";
   totalCell.textContent = "0";
   row.appendChild(totalCell);
 
-  // Update total
   function updateTotal() {
     let total = 0;
     checkboxes.forEach(cb => {
@@ -209,7 +235,6 @@ function tambahBaris(data = null) {
     simpanData();
   }
 
-  // Jumlah kolom aktif
   inputJumlah.oninput = function() {
     let jumlah = parseInt(this.value) || 0;
 
@@ -226,7 +251,7 @@ function tambahBaris(data = null) {
   updateTotal();
 }
 
-// POPUP
+// ================= POPUP =================
 function tampilkanKonfirmasi() {
   document.getElementById("popup").style.display = "flex";
 }
@@ -240,8 +265,15 @@ function hapusSemua() {
   tutupPopup();
 }
 
-// LOAD SAAT BUKA
+// ================= BATASI USER =================
+if(!isAdmin){
+  document.getElementById("btnTambah").style.display = "none";
+  document.getElementById("btnHapus").style.display = "none";
+}
+
+// ================= LOAD =================
 window.onload = loadData;
+
 </script>
 
 </body>
