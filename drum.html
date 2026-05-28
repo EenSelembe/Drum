@@ -54,13 +54,6 @@ input {
   padding: 2px;
 }
 
-.dex-input {
-  width: 40px;
-  color: #00ff00;
-  font-weight: bold;
-}
-
-/* checkbox */
 input[type="checkbox"] {
   transform: scale(1.2);
 }
@@ -96,7 +89,11 @@ button {
 <th>Nama</th>
 <th>Jumlah</th>
 
-<th id="headerDex"></th>
+<script>
+for(let i=1;i<=20;i++){
+  document.write("<th>"+i+"</th>");
+}
+</script>
 
 <th>Total Ceklis</th>
 <th>Total Dex</th>
@@ -108,15 +105,6 @@ button {
 </table>
 
 <h3>Total Semua: <span id="grandTotal">0</span></h3>
-
-<script>
-/* HEADER 1 - 20 */
-let h = "";
-for(let i=1;i<=20;i++){
-  h += `<th>${i}</th>`;
-}
-document.getElementById("headerDex").outerHTML = h;
-</script>
 
 <script type="module">
 
@@ -183,7 +171,7 @@ onSnapshot(q, snapshot => {
     const dex = data.dex || Array.from({length:20},()=>({cek:false}));
 
     let totalCeklis = 0;
-    let totalDex = 0;
+    let totalDexItem = 0;
 
     const tr = document.createElement("tr");
 
@@ -227,7 +215,7 @@ onSnapshot(q, snapshot => {
       td.appendChild(c1);
       td.appendChild(c2);
 
-      // DEX (BARU)
+      // DEX FIX
       const dexBox = document.createElement("div");
       dexBox.className="dex-box";
 
@@ -238,7 +226,7 @@ onSnapshot(q, snapshot => {
       dexCek.onchange=()=>updateDex(id,i,"cek",dexCek.checked);
 
       if(dex[i]?.cek){
-        totalDex += 50;
+        totalDexItem += 1;
       }
 
       dexBox.appendChild(dexCek);
@@ -251,13 +239,13 @@ onSnapshot(q, snapshot => {
       tr.appendChild(td);
     }
 
-    // UANG
+    // 💰 RUMUS FINAL BENAR
     const uangCeklis = totalCeklis * 100 * 6800;
-    const uangDex = totalDex * 50000;
+    const uangDex = totalDexItem * 50000;
     const uang = uangCeklis + uangDex;
 
     tr.appendChild(tdWrap(totalCeklis));
-    tr.appendChild(tdWrap(totalDex));
+    tr.appendChild(tdWrap(totalDexItem));
     tr.appendChild(tdWrap(uang.toLocaleString("id-ID")));
 
     grand += uang;
