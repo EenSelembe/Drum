@@ -12,8 +12,6 @@ body {
   padding: 20px;
 }
 
-h2 { margin-bottom: 10px; }
-
 table {
   border-collapse: collapse;
   width: 100%;
@@ -35,7 +33,6 @@ input {
   color: white;
   border: none;
   text-align: center;
-  width: 100%;
 }
 
 button {
@@ -45,14 +42,8 @@ button {
   cursor: pointer;
 }
 
-#btnTambah {
-  background: green;
-  margin-bottom: 10px;
-}
-
-.logout {
-  background: red;
-}
+#btnTambah { background: green; }
+.logout { background: red; }
 
 </style>
 </head>
@@ -74,13 +65,11 @@ button {
 <tr>
 <th>Nama</th>
 <th>Jumlah</th>
-
 <script>
 for(let i=1;i<=20;i++){
   document.write("<th>"+i+"</th>");
 }
 </script>
-
 <th>Total</th>
 </tr>
 </thead>
@@ -90,22 +79,20 @@ for(let i=1;i<=20;i++){
 
 <h3>Total Semua: <span id="grandTotal">0</span></h3>
 
-<!-- FIREBASE -->
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  onSnapshot, 
-  updateDoc, 
-  doc, 
-  deleteDoc, 
-  getDoc 
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  updateDoc,
+  doc,
+  deleteDoc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// CONFIG KAMU
 const firebaseConfig = {
   apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
   authDomain: "drum-26d1c.firebaseapp.com",
@@ -115,51 +102,46 @@ const firebaseConfig = {
   appId: "1:960892789351:web:ca1c653c85cab59586eac2"
 };
 
-// INIT
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ROLE
 let role = localStorage.getItem("role");
 
 if(!role){
-  alert("Harus login dulu!");
   location.href = "index.html";
 }
 
 document.getElementById("infoUser").innerText = "Login: " + role;
 
-// BATASI USER
-if(role === "user"){
-  document.getElementById("btnTambah").style.display = "none";
+if(role==="user"){
+  document.getElementById("btnTambah").style.display="none";
 }
 
-// LOGOUT
 window.logout = function(){
   localStorage.clear();
-  location.href = "index.html";
+  location.href="index.html";
 }
 
-// TAMBAH DATA
-document.getElementById("btnTambah").onclick = async () => {
-  if(role !== "admin") return;
+// TAMBAH
+document.getElementById("btnTambah").onclick = async ()=>{
+  if(role!=="admin") return;
 
-  await addDoc(collection(db, "drum"), {
-    nama: "",
-    jumlah: 0,
-    ceklis: Array(40).fill(false)
+  await addDoc(collection(db,"drum"),{
+    nama:"",
+    jumlah:0,
+    ceklis:Array(40).fill(false)
   });
-}
+};
 
-// REALTIME LOAD
-onSnapshot(collection(db,"drum"), (snapshot)=>{
+// REALTIME
+onSnapshot(collection(db,"drum"), snapshot => {
 
   const table = document.getElementById("tableBody");
   table.innerHTML = "";
 
-  let grandTotal = 0;
+  let grand = 0;
 
-  snapshot.forEach((docSnap)=>{
+  snapshot.forEach(docSnap => {
 
     const data = docSnap.data();
     const id = docSnap.id;
@@ -171,7 +153,7 @@ onSnapshot(collection(db,"drum"), (snapshot)=>{
     nama.value = data.nama;
     if(role==="user") nama.disabled = true;
 
-    nama.oninput = () => {
+    nama.onchange = ()=>{
       updateDoc(doc(db,"drum",id), { nama: nama.value });
     };
 
@@ -181,12 +163,12 @@ onSnapshot(collection(db,"drum"), (snapshot)=>{
 
     // JUMLAH
     const jumlah = document.createElement("input");
-    jumlah.type = "number";
+    jumlah.type="number";
     jumlah.value = data.jumlah;
 
     if(role==="user") jumlah.disabled = true;
 
-    jumlah.oninput = () => {
+    jumlah.onchange = ()=>{
       updateDoc(doc(db,"drum",id), { jumlah: parseInt(jumlah.value)||0 });
     };
 
@@ -203,14 +185,14 @@ onSnapshot(collection(db,"drum"), (snapshot)=>{
       const c1 = document.createElement("input");
       const c2 = document.createElement("input");
 
-      c1.type = "checkbox";
-      c2.type = "checkbox";
+      c1.type="checkbox";
+      c2.type="checkbox";
 
       c1.checked = data.ceklis[i*2];
       c2.checked = data.ceklis[i*2+1];
 
-      c1.onchange = ()=>updateCeklis(id, i*2, c1.checked);
-      c2.onchange = ()=>updateCeklis(id, i*2+1, c2.checked);
+      c1.onchange = ()=>updateCeklis(id,i*2,c1.checked);
+      c2.onchange = ()=>updateCeklis(id,i*2+1,c2.checked);
 
       if(c1.checked) total += 0.5;
       if(c2.checked) total += 0.5;
@@ -220,7 +202,7 @@ onSnapshot(collection(db,"drum"), (snapshot)=>{
       td.appendChild(c2);
 
       if(i >= data.jumlah){
-        td.style.display = "none";
+        td.style.display="none";
       }
 
       tr.appendChild(td);
@@ -230,13 +212,12 @@ onSnapshot(collection(db,"drum"), (snapshot)=>{
     tdTotal.innerText = total;
     tr.appendChild(tdTotal);
 
-    grandTotal += total;
+    grand += total;
 
-    // HAPUS (ADMIN SAJA)
     if(role==="admin"){
       const btnHapus = document.createElement("button");
-      btnHapus.innerText = "❌";
-      btnHapus.onclick = ()=>deleteDoc(doc(db,"drum",id));
+      btnHapus.innerText="❌";
+      btnHapus.onclick=()=>deleteDoc(doc(db,"drum",id));
 
       const tdHapus = document.createElement("td");
       tdHapus.appendChild(btnHapus);
@@ -247,21 +228,20 @@ onSnapshot(collection(db,"drum"), (snapshot)=>{
 
   });
 
-  document.getElementById("grandTotal").innerText = grandTotal;
+  document.getElementById("grandTotal").innerText = grand;
 
 });
 
-// UPDATE CEKLIS AMAN
-async function updateCeklis(id, index, value){
+// UPDATE CEKLIS
+async function updateCeklis(id,index,value){
 
   const ref = doc(db,"drum",id);
   const snap = await getDoc(ref);
 
   let arr = snap.data().ceklis;
-
   arr[index] = value;
 
-  await updateDoc(ref, { ceklis: arr });
+  await updateDoc(ref,{ ceklis: arr });
 
 }
 
