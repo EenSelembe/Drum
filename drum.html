@@ -96,11 +96,7 @@ button {
 <th>Nama</th>
 <th>Jumlah</th>
 
-<script>
-for(let i=1;i<=20;i++){
-  document.write("<th>"+i+"</th>");
-}
-</script>
+<th id="headerDex"></th>
 
 <th>Total Ceklis</th>
 <th>Total Dex</th>
@@ -112,6 +108,15 @@ for(let i=1;i<=20;i++){
 </table>
 
 <h3>Total Semua: <span id="grandTotal">0</span></h3>
+
+<script>
+/* HEADER 1 - 20 */
+let h = "";
+for(let i=1;i<=20;i++){
+  h += `<th>${i}</th>`;
+}
+document.getElementById("headerDex").outerHTML = h;
+</script>
 
 <script type="module">
 
@@ -154,7 +159,7 @@ document.getElementById("btnTambah").onclick = async ()=>{
     nama:"",
     jumlah:0,
     ceklis:Array(40).fill(false),
-    dex: Array.from({length:20},()=>({nilai:50,cek:false})),
+    dex: Array.from({length:20},()=>({cek:false})),
     createdAt: Date.now()
   });
 };
@@ -175,7 +180,7 @@ onSnapshot(q, snapshot => {
     const id = docSnap.id;
 
     const ceklis = data.ceklis || Array(40).fill(false);
-    const dex = data.dex || Array.from({length:20},()=>({nilai:50,cek:false}));
+    const dex = data.dex || Array.from({length:20},()=>({cek:false}));
 
     let totalCeklis = 0;
     let totalDex = 0;
@@ -186,15 +191,8 @@ onSnapshot(q, snapshot => {
     const nama = document.createElement("input");
     nama.value = data.nama || "";
     nama.className="input-nama";
-
     if(role==="user") nama.disabled=true;
-
-    nama.onchange = ()=>{
-      updateDoc(doc(db,"drum",id),{
-        nama: nama.value.toUpperCase()
-      });
-    };
-
+    nama.onchange=()=>updateDoc(doc(db,"drum",id),{nama:nama.value.toUpperCase()});
     tr.appendChild(tdWrap(nama));
 
     // JUMLAH
@@ -202,22 +200,15 @@ onSnapshot(q, snapshot => {
     jumlah.type="number";
     jumlah.value=data.jumlah||0;
     jumlah.className="input-jumlah";
-
     if(role==="user") jumlah.disabled=true;
-
-    jumlah.onchange = ()=>{
-      updateDoc(doc(db,"drum",id),{
-        jumlah: parseInt(jumlah.value)||0
-      });
-    };
-
+    jumlah.onchange=()=>updateDoc(doc(db,"drum",id),{jumlah:parseInt(jumlah.value)||0});
     tr.appendChild(tdWrap(jumlah));
 
     for(let i=0;i<20;i++){
 
       const td = document.createElement("td");
 
-      // CEKLIS (0.5 + 0.5)
+      // CEKLIS
       const c1=document.createElement("input");
       const c2=document.createElement("input");
 
@@ -236,17 +227,9 @@ onSnapshot(q, snapshot => {
       td.appendChild(c1);
       td.appendChild(c2);
 
-      // DEX
+      // DEX (BARU)
       const dexBox = document.createElement("div");
       dexBox.className="dex-box";
-
-      const dexInput = document.createElement("input");
-      dexInput.value=dex[i]?.nilai ?? 50;
-      dexInput.className="dex-input";
-
-      if(role==="user") dexInput.disabled=true;
-
-      dexInput.onchange=()=>updateDex(id,i,"nilai",parseInt(dexInput.value)||0);
 
       const dexCek=document.createElement("input");
       dexCek.type="checkbox";
@@ -254,11 +237,11 @@ onSnapshot(q, snapshot => {
 
       dexCek.onchange=()=>updateDex(id,i,"cek",dexCek.checked);
 
-      totalDex += parseInt(dex[i]?.nilai)||0;
+      if(dex[i]?.cek){
+        totalDex += 50;
+      }
 
-      dexBox.appendChild(dexInput);
       dexBox.appendChild(dexCek);
-
       td.appendChild(dexBox);
 
       if(i>=data.jumlah){
@@ -268,7 +251,10 @@ onSnapshot(q, snapshot => {
       tr.appendChild(td);
     }
 
-    const uang = totalCeklis * 100 * 6800;
+    // UANG
+    const uangCeklis = totalCeklis * 100 * 6800;
+    const uangDex = totalDex * 50000;
+    const uang = uangCeklis + uangDex;
 
     tr.appendChild(tdWrap(totalCeklis));
     tr.appendChild(tdWrap(totalDex));
@@ -300,7 +286,7 @@ function tdWrap(el){
   return td;
 }
 
-// UPDATE CEKLIS
+// CEKLIS
 async function updateCeklis(id,index,value){
   const ref=doc(db,"drum",id);
   const snap=await getDoc(ref);
@@ -309,13 +295,13 @@ async function updateCeklis(id,index,value){
   await updateDoc(ref,{ceklis:arr});
 }
 
-// UPDATE DEX
+// DEX
 async function updateDex(id,i,field,value){
   const ref=doc(db,"drum",id);
   const snap=await getDoc(ref);
   let arr=snap.data().dex || [];
 
-  arr[i]=arr[i] || {nilai:50,cek:false};
+  arr[i]=arr[i] || {cek:false};
   arr[i][field]=value;
 
   await updateDoc(ref,{dex:arr});
