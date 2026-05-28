@@ -3,18 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login Multi User</title>
+<title>Login</title>
 
 <style>
 body {
     font-family: Arial;
-    background: #0f172a;
-    color: white;
-    margin:0;
-}
-
-/* LOGIN */
-#loginBox {
+    background:#0f172a;
+    color:white;
     display:flex;
     justify-content:center;
     align-items:center;
@@ -24,9 +19,8 @@ body {
 .card {
     background:#1e293b;
     padding:25px;
-    border-radius:12px;
-    width:320px;
-    box-shadow:0 0 15px rgba(0,0,0,0.5);
+    border-radius:10px;
+    width:300px;
 }
 
 input, button {
@@ -37,78 +31,30 @@ input, button {
     border-radius:6px;
 }
 
-input {
-    background:#334155;
-    color:white;
-}
+input { background:#334155; color:white; }
 
 button {
     background:#22c55e;
     color:white;
     font-weight:bold;
-    cursor:pointer;
 }
 
-button:hover {
-    background:#16a34a;
-}
-
-.error {
-    color:red;
-    font-size:14px;
-}
-
-/* DASHBOARD */
-#dashboard {
-    display:none;
-}
-
-.navbar {
-    background:#020617;
-    padding:15px;
-    display:flex;
-    justify-content:space-between;
-}
-
-.content {
-    padding:20px;
-}
-
-.box {
-    background:#1e293b;
-    padding:20px;
-    border-radius:10px;
-    margin-top:10px;
-}
+.error { color:red; }
 </style>
 
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="loginBox">
-    <div class="card">
-        <h2>Login</h2>
-        <input type="text" id="username" placeholder="Username">
-        <input type="password" id="password" placeholder="Password">
-        <button onclick="login()">Masuk</button>
-        <p class="error" id="error"></p>
-    </div>
-</div>
-
-<!-- DASHBOARD -->
-<div id="dashboard">
-    <div class="navbar">
-        <div id="userInfo"></div>
-        <button onclick="logout()">Logout</button>
-    </div>
-
-    <div class="content" id="contentArea"></div>
+<div class="card">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Masuk</button>
+    <p class="error" id="error"></p>
 </div>
 
 <script>
 
-// DATA USER
 const users = [
     {username:"admin", password:"123", role:"admin"},
     {username:"user", password:"123", role:"user"}
@@ -122,45 +68,19 @@ function login(){
 
     if(user){
         localStorage.setItem("user", JSON.stringify(user));
-        showDashboard(user);
+
+        // 🔥 LANGSUNG KE drum.html
+        window.location.href = "drum.html";
+
     }else{
-        error.innerText = "Login gagal!";
+        error.innerText = "Username / Password salah!";
     }
-}
-
-function showDashboard(user){
-    loginBox.style.display="none";
-    dashboard.style.display="block";
-
-    userInfo.innerHTML = "Login sebagai: <b>"+user.username+"</b> ("+user.role+")";
-
-    if(user.role==="admin"){
-        contentArea.innerHTML = `
-            <div class="box">
-                <h3>Panel Admin</h3>
-                <p>Kelola data user, lihat laporan, dll.</p>
-            </div>
-        `;
-    }else{
-        contentArea.innerHTML = `
-            <div class="box">
-                <h3>Panel User</h3>
-                <p>Selamat datang user biasa.</p>
-            </div>
-        `;
-    }
-}
-
-function logout(){
-    localStorage.removeItem("user");
-    location.reload();
 }
 
 // AUTO LOGIN
 window.onload = function(){
-    let data = localStorage.getItem("user");
-    if(data){
-        showDashboard(JSON.parse(data));
+    if(localStorage.getItem("user")){
+        window.location.href = "drum.html";
     }
 }
 
