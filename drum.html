@@ -96,16 +96,16 @@ button {
 <th>Nama</th>
 <th>Jumlah</th>
 
+<!-- FIX: ganti document.write -->
 <script>
 for(let i=1;i<=20;i++){
-  document.write("<th>"+i+"</th>");
+  document.write(`<th>${i}</th>`);
 }
 </script>
 
 <th>Total Ceklis</th>
 <th>Total Dex</th>
 <th>Uang</th>
-
 </tr>
 </thead>
 
@@ -147,7 +147,7 @@ window.logout = ()=>{
   location.href="index.html";
 };
 
-// TAMBAH DATA
+// TAMBAH
 document.getElementById("btnTambah").onclick = async ()=>{
   if(role!=="admin") return;
 
@@ -163,7 +163,6 @@ document.getElementById("btnTambah").onclick = async ()=>{
 // QUERY
 const q = query(collection(db,"drum"), orderBy("createdAt","asc"));
 
-// REALTIME
 onSnapshot(q, snapshot => {
 
   const table = document.getElementById("tableBody");
@@ -176,100 +175,76 @@ onSnapshot(q, snapshot => {
     const data = docSnap.data();
     const id = docSnap.id;
 
-    if(!data.dex){
-      data.dex = Array.from({length:20},()=>({nilai:50,cek:false}));
-    }
-
-    const tr = document.createElement("tr");
-
-    // ===== NAMA =====
-    const nama = document.createElement("input");
-    nama.value = data.nama;
-    nama.className="input-nama";
-
-    if(role==="user") nama.disabled=true;
-
-    nama.onchange = ()=>{
-      updateDoc(doc(db,"drum",id),{
-        nama: nama.value.toUpperCase()
-      });
-    };
-
-    tr.appendChild(tdWrap(nama));
-
-    // ===== JUMLAH =====
-    const jumlah = document.createElement("input");
-    jumlah.type="number";
-    jumlah.value=data.jumlah;
-    jumlah.className="input-jumlah";
-
-    if(role==="user") jumlah.disabled=true;
-
-    jumlah.onchange = ()=>{
-      updateDoc(doc(db,"drum",id),{
-        jumlah: parseInt(jumlah.value)||0
-      });
-    };
-
-    tr.appendChild(tdWrap(jumlah));
+    const ceklis = data.ceklis || Array(40).fill(false);
+    const dex = data.dex || Array(20).fill({nilai:50,cek:false});
 
     let totalCeklis = 0;
     let totalDex = 0;
+
+    const tr = document.createElement("tr");
+
+    // NAMA
+    const nama = document.createElement("input");
+    nama.value = data.nama || "";
+    nama.className="input-nama";
+    if(role==="user") nama.disabled=true;
+    nama.onchange=()=>updateDoc(doc(db,"drum",id),{nama:nama.value.toUpperCase()});
+    tr.appendChild(tdWrap(nama));
+
+    // JUMLAH
+    const jumlah = document.createElement("input");
+    jumlah.type="number";
+    jumlah.value=data.jumlah||0;
+    jumlah.className="input-jumlah";
+    if(role==="user") jumlah.disabled=true;
+    jumlah.onchange=()=>updateDoc(doc(db,"drum",id),{jumlah:parseInt(jumlah.value)||0});
+    tr.appendChild(tdWrap(jumlah));
 
     for(let i=0;i<20;i++){
 
       const td = document.createElement("td");
 
-      // ===== CEKLIS =====
       const c1=document.createElement("input");
       const c2=document.createElement("input");
 
       c1.type="checkbox";
       c2.type="checkbox";
 
-      c1.checked=data.ceklis[i*2];
-      c2.checked=data.ceklis[i*2+1];
+      c1.checked=!!ceklis[i*2];
+      c2.checked=!!ceklis[i*2+1];
 
       c1.onchange=()=>updateCeklis(id,i*2,c1.checked);
       c2.onchange=()=>updateCeklis(id,i*2+1,c2.checked);
 
-      if(c1.checked) totalCeklis+=0.5;
-      if(c2.checked) totalCeklis+=0.5;
+      if(c1.checked) totalCeklis += 1;
+      if(c2.checked) totalCeklis += 1;
 
       td.appendChild(c1);
-      td.appendChild(document.createElement("br"));
       td.appendChild(c2);
 
-      // ===== DEX =====
       const dexBox = document.createElement("div");
       dexBox.className="dex-box";
 
       const dexInput = document.createElement("input");
-      dexInput.value=data.dex[i]?.nilai||50;
+      dexInput.value=dex[i]?.nilai ?? 50;
       dexInput.className="dex-input";
-
       if(role==="user") dexInput.disabled=true;
-
       dexInput.onchange=()=>updateDex(id,i,"nilai",parseInt(dexInput.value)||0);
 
       const dexCek=document.createElement("input");
       dexCek.type="checkbox";
-      dexCek.checked=data.dex[i]?.cek||false;
+      dexCek.checked=!!dex[i]?.cek;
 
       dexCek.onchange=()=>updateDex(id,i,"cek",dexCek.checked);
 
-      totalDex += parseInt(dexInput.value)||0;
+      totalDex += parseInt(dex[i]?.nilai)||0;
 
       dexBox.appendChild(dexInput);
-      dexBox.appendChild(document.createElement("br"));
       dexBox.appendChild(dexCek);
 
-      td.appendChild(document.createElement("hr"));
       td.appendChild(dexBox);
 
-      if(i>=data.jumlah){
-        td.style.display="none";
-      }
+      if(i>=data.jumlah) td.style.display="none";
 
       tr.appendChild(td);
     }
@@ -290,12 +265,10 @@ onSnapshot(q, snapshot => {
     }
 
     table.appendChild(tr);
-
   });
 
   document.getElementById("grandTotal").innerText =
     grand.toLocaleString("id-ID");
-
 });
 
 // HELPER
@@ -306,16 +279,16 @@ function tdWrap(el){
   return td;
 }
 
-// UPDATE CEKLIS
+// CEKLIS
 async function updateCeklis(id,index,value){
   const ref=doc(db,"drum",id);
   const snap=await getDoc(ref);
-  let arr=snap.data().ceklis;
+  let arr=snap.data().ceklis||[];
   arr[index]=value;
   await updateDoc(ref,{ceklis:arr});
 }
 
-// UPDATE DEX
+// DEX
 async function updateDex(id,i,field,value){
   const ref=doc(db,"drum",id);
   const snap=await getDoc(ref);
