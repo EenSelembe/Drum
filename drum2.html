@@ -64,7 +64,7 @@ th, td {
 <button class="copy" onclick="copyData()">Copy</button>
 
 <div class="total-box">
-  Total Semua: <span id="totalSemua">0</span> L<br>
+  Total Semua: <span id="totalSemua">0</span> Rp<br>
   Total ✔: <span id="totalCeklis">0</span> L<br>
   Total DEX: <span id="totalDex">0</span> Rp
 </div>
@@ -95,7 +95,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 // ================== MODE ==================
-const role = "admin"; // ubah jadi "user" kalau user
+const role = "admin"; // ubah jadi "user"
 
 // ================== FIREBASE ==================
 const firebaseConfig = {
@@ -144,17 +144,17 @@ window.loadData = async function() {
   const snap = await getDocs(collection(db, "drum2"));
   let html = "";
 
-  let totalSemua = 0;
+  let totalSemuaLiter = 0;
   let totalCeklis = 0;
   let totalDex = 0;
 
   snap.forEach((d) => {
     const data = d.data();
 
-    totalSemua += data.liter;
+    totalSemuaLiter += data.liter;
     if (data.ceklis) totalCeklis += data.liter;
 
-    // ✅ DEX FIX: 1 klik = 50.000 (flat)
+    // DEX = 1 klik = 50.000
     if (data.dex) totalDex += 50000;
 
     html += `
@@ -182,9 +182,17 @@ window.loadData = async function() {
 
   document.getElementById("tbody").innerHTML = html;
 
-  document.getElementById("totalSemua").innerText = totalSemua;
-  document.getElementById("totalCeklis").innerText = totalCeklis;
-  document.getElementById("totalDex").innerText = totalDex.toLocaleString("id-ID");
+  // ================== RUMUS BARU ==================
+  let totalSemuaHarga = (totalSemuaLiter * 6800) + totalDex;
+
+  document.getElementById("totalSemua").innerText =
+    totalSemuaHarga.toLocaleString("id-ID");
+
+  document.getElementById("totalCeklis").innerText =
+    totalCeklis;
+
+  document.getElementById("totalDex").innerText =
+    totalDex.toLocaleString("id-ID");
 }
 
 // ================== CEKLIS ==================
