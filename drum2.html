@@ -43,6 +43,13 @@ th, td {
 .copy { background: green; color: white; }
 .hapus { background: red; color: white; }
 
+.total-box {
+  margin-top: 10px;
+  padding: 10px;
+  background: #222;
+  border: 1px solid #555;
+}
+
 </style>
 </head>
 
@@ -55,6 +62,12 @@ th, td {
 
 <button onclick="tambahData()">Tambah</button>
 <button class="copy" onclick="copyData()">Copy</button>
+
+<div class="total-box">
+  <b>Total Semua:</b> <span id="totalSemua">0</span> L<br>
+  <b>Total ✔:</b> <span id="totalCeklis">0</span> L<br>
+  <b>Total DEX:</b> <span id="totalDex">0</span> L
+</div>
 
 <table>
 <thead>
@@ -113,13 +126,22 @@ window.tambahData = async function() {
   loadData();
 }
 
-// LOAD
+// LOAD + HITUNG TOTAL
 window.loadData = async function() {
   const snap = await getDocs(collection(db, "drum2"));
   let html = "";
 
+  let totalSemua = 0;
+  let totalCeklis = 0;
+  let totalDex = 0;
+
   snap.forEach((d) => {
     const data = d.data();
+
+    totalSemua += data.liter;
+
+    if (data.ceklis) totalCeklis += data.liter;
+    if (data.dex) totalDex += data.liter;
 
     html += `
       <tr>
@@ -143,20 +165,22 @@ window.loadData = async function() {
   });
 
   document.getElementById("tbody").innerHTML = html;
+
+  document.getElementById("totalSemua").innerText = totalSemua;
+  document.getElementById("totalCeklis").innerText = totalCeklis;
+  document.getElementById("totalDex").innerText = totalDex;
 }
 
 // CEKLIS
 window.toggleCeklis = async function(id, status) {
-  await updateDoc(doc(db, "drum2", id), {
-    ceklis: status
-  });
+  await updateDoc(doc(db, "drum2", id), { ceklis: status });
+  loadData();
 }
 
 // DEX
 window.toggleDex = async function(id, status) {
-  await updateDoc(doc(db, "drum2", id), {
-    dex: status
-  });
+  await updateDoc(doc(db, "drum2", id), { dex: status });
+  loadData();
 }
 
 // HAPUS
