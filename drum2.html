@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Drum 2</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #121212;
+  color: white;
+  margin: 0;
+  padding: 10px;
+}
+
+h2 {
+  text-align: center;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #444;
+  padding: 8px;
+  text-align: center;
+}
+
+th {
+  background: #1e1e1e;
+}
+
+input[type="number"] {
+  width: 80px;
+  padding: 5px;
+}
+
+input[type="checkbox"] {
+  transform: scale(1.2);
+  cursor: pointer;
+}
+
+.dex-off {
+  background: red !important;
+}
+
+.total-box {
+  margin-top: 15px;
+  padding: 12px;
+  background: #1e1e1e;
+  border-radius: 8px;
+  line-height: 1.8;
+}
+</style>
+</head>
+
+<body>
+
+<h2>DRUM 2</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Nama</th>
+      <th>Liter</th>
+      <th>Ceklis</th>
+      <th>DEX (+50rb)</th>
+    </tr>
+  </thead>
+
+  <tbody id="bodyData"></tbody>
+</table>
+
+<div class="total-box">
+  <p>Total Liter: <span id="totalLiter">0</span></p>
+  <p>Total DEX: <span id="totalDex">0</span></p>
+  <p>Total Uang Liter: Rp <span id="uangLiter">0</span></p>
+  <p><b>Total Keseluruhan: Rp <span id="grandTotal">0</span></b></p>
+</div>
+
+<script>
+
+const data = [
+  { nama: "A" },
+  { nama: "B" },
+  { nama: "C" }
+];
+
+function render(){
+
+  const body = document.getElementById("bodyData");
+  body.innerHTML = "";
+
+  data.forEach((item) => {
+
+    const tr = document.createElement("tr");
+
+    // Nama
+    const tdNama = document.createElement("td");
+    tdNama.innerText = item.nama;
+
+    // Liter
+    const tdLiter = document.createElement("td");
+    const inputLiter = document.createElement("input");
+    inputLiter.type = "number";
+    inputLiter.value = 0;
+    inputLiter.oninput = hitung;
+    tdLiter.appendChild(inputLiter);
+
+    // Ceklis biasa
+    const tdCeklis = document.createElement("td");
+    const cek1 = document.createElement("input");
+    cek1.type = "checkbox";
+    cek1.onchange = hitung;
+    tdCeklis.appendChild(cek1);
+
+    // DEX
+    const tdDex = document.createElement("td");
+    const cek2 = document.createElement("input");
+    cek2.type = "checkbox";
+    cek2.onchange = hitung;
+
+    // 🔥 Klik kolom untuk disable/enable dex
+    tdDex.onclick = function(e){
+      // supaya tidak bentrok dengan klik checkbox
+      if(e.target.tagName !== "INPUT"){
+        cek2.disabled = !cek2.disabled;
+
+        if(cek2.disabled){
+          cek2.checked = false;
+          tdDex.classList.add("dex-off");
+        } else {
+          tdDex.classList.remove("dex-off");
+        }
+
+        hitung();
+      }
+    };
+
+    tdDex.appendChild(cek2);
+
+    tr.appendChild(tdNama);
+    tr.appendChild(tdLiter);
+    tr.appendChild(tdCeklis);
+    tr.appendChild(tdDex);
+
+    body.appendChild(tr);
+
+  });
+
+}
+
+function hitung(){
+
+  let totalLiter = 0;
+  let totalDex = 0;
+  let uangLiter = 0;
+
+  const rows = document.querySelectorAll("#bodyData tr");
+
+  rows.forEach(row => {
+
+    const liter = Number(row.children[1].querySelector("input").value);
+    const cek1 = row.children[2].querySelector("input").checked;
+    const cek2 = row.children[3].querySelector("input");
+
+    if(cek1){
+      totalLiter += liter;
+      uangLiter += liter * 6800;
+    }
+
+    if(cek2.checked){
+      totalDex += 1;
+    }
+
+  });
+
+  const uangDex = totalDex * 50000;
+  const grandTotal = uangLiter + uangDex;
+
+  document.getElementById("totalLiter").innerText = totalLiter;
+  document.getElementById("totalDex").innerText = totalDex;
+  document.getElementById("uangLiter").innerText = uangLiter.toLocaleString();
+  document.getElementById("grandTotal").innerText = grandTotal.toLocaleString();
+
+}
+
+render();
+
+</script>
+
+</body>
+</html>
