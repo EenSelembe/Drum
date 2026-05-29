@@ -15,7 +15,6 @@ body {
   height: 100vh;
 }
 
-/* CONTAINER */
 .menu-box {
   text-align: center;
   background: #1e1e1e;
@@ -25,12 +24,10 @@ body {
   box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
 
-/* JUDUL */
 h2 {
   margin-bottom: 20px;
 }
 
-/* BUTTON MENU */
 .menu-btn {
   display: block;
   width: 100%;
@@ -44,7 +41,6 @@ h2 {
   transition: 0.2s;
 }
 
-/* WARNA */
 .sambo {
   background: #0a84ff;
 }
@@ -58,7 +54,6 @@ h2 {
   opacity: 0.9;
 }
 
-/* LOGOUT */
 .logout {
   margin-top: 20px;
   background: red;
@@ -75,6 +70,7 @@ h2 {
 
   <h2>MENU UTAMA</h2>
 
+  <!-- 🔥 SAMBO KE DRUM -->
   <button class="menu-btn sambo" onclick="goSambo()">SAMBO</button>
 
   <button class="menu-btn umum" onclick="goUmum()">UMUM</button>
@@ -92,13 +88,14 @@ if(!role){
   location.href = "index.html";
 }
 
-// PINDAH HALAMAN
+// 🔥 SAMBO → DRUM.HTML
 function goSambo(){
-  location.href = "sambo.html";
+  location.href = "drum.html";
 }
 
+// UMUM (bebas nanti mau isi apa)
 function goUmum(){
-  location.href = "umum.html";
+  alert("Menu UMUM belum dibuat");
 }
 
 // LOGOUT
