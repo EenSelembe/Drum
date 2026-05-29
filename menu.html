@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Menu Utama</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #121212;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* CONTAINER */
+.menu-box {
+  text-align: center;
+  background: #1e1e1e;
+  padding: 30px;
+  border-radius: 10px;
+  width: 250px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+/* JUDUL */
+h2 {
+  margin-bottom: 20px;
+}
+
+/* BUTTON MENU */
+.menu-btn {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  margin: 10px 0;
+  font-size: 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+/* WARNA */
+.sambo {
+  background: #0a84ff;
+}
+
+.umum {
+  background: #34c759;
+}
+
+.menu-btn:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+/* LOGOUT */
+.logout {
+  margin-top: 20px;
+  background: red;
+  padding: 10px;
+  width: 100%;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="menu-box">
+
+  <h2>MENU UTAMA</h2>
+
+  <button class="menu-btn sambo" onclick="goSambo()">SAMBO</button>
+
+  <button class="menu-btn umum" onclick="goUmum()">UMUM</button>
+
+  <button class="menu-btn logout" onclick="logout()">Logout</button>
+
+</div>
+
+<script>
+
+// CEK LOGIN
+let role = localStorage.getItem("role");
+
+if(!role){
+  location.href = "index.html";
+}
+
+// PINDAH HALAMAN
+function goSambo(){
+  location.href = "sambo.html";
+}
+
+function goUmum(){
+  location.href = "umum.html";
+}
+
+// LOGOUT
+function logout(){
+  localStorage.clear();
+  location.href = "index.html";
+}
+
+</script>
+
+</body>
+</html>
