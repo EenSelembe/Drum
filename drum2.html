@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>UMUM</title>
+<title>DRUM 2</title>
 
 <style>
 body {
@@ -95,7 +95,7 @@ input[type="number"] {
 let data = [];
 const role = localStorage.getItem("role");
 
-// TAMBAH
+// TAMBAH DATA
 function tambahData(){
   if(role !== "admin") return alert("Hanya admin");
 
@@ -110,7 +110,7 @@ function tambahData(){
   simpanFirebase(data);
 }
 
-// HAPUS
+// HAPUS DATA
 function hapusData(i){
   if(!confirm("Hapus data?")) return;
   data.splice(i,1);
@@ -133,9 +133,11 @@ function render(){
     inputNama.value = item.nama;
 
     inputNama.oninput = e=>{
-      const val = e.target.value.toUpperCase();
-      e.target.value = val;
-      item.nama = val;
+      e.target.value = e.target.value.toUpperCase();
+    };
+
+    inputNama.onchange = e=>{
+      item.nama = e.target.value;
       simpanFirebase(data);
     };
 
@@ -147,7 +149,7 @@ function render(){
     inputLiter.type = "number";
     inputLiter.value = item.liter;
 
-    inputLiter.oninput = e=>{
+    inputLiter.onchange = e=>{
       item.liter = parseFloat(e.target.value)||0;
       simpanFirebase(data);
     };
@@ -266,7 +268,7 @@ window.loadFirebase = function(callback){
   });
 }
 
-// JALANKAN
+// START
 loadFirebase((val)=>{
   data = val;
   render();
