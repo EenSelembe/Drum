@@ -23,12 +23,6 @@ input {
 #nama { width: 50%; }
 #liter { width: 20%; }
 
-button {
-  padding: 10px;
-  margin: 5px;
-  cursor: pointer;
-}
-
 table {
   width: 100%;
   border-collapse: collapse;
@@ -41,11 +35,11 @@ th, td {
 }
 
 .copy { background: green; color: white; }
-.hapus { background: red; color: white; }
 
 .lock-on {
   color: #00ff7f;
   font-weight: bold;
+  cursor: pointer;
 }
 
 .lock-off {
@@ -63,21 +57,15 @@ th, td {
 <input type="text" id="nama" placeholder="Nama">
 <input type="number" id="liter" placeholder="Liter">
 
-<div class="copy" onclick="copyData()">Copy</div>
-
-<div style="margin:10px 0;">
-  Total Semua: <span id="totalSemua">0</span> Rp<br>
-  Total ✔: <span id="totalCeklis">0</span> L<br>
-  Total DEX: <span id="totalDex">0</span> Rp
-</div>
+<div onclick="copyData()" class="copy">Copy</div>
 
 <table>
 <thead>
 <tr>
 <th>Nama</th>
 <th>Liter</th>
-<th>DEX</th>
-<th>✔</th>
+<th>DEXLITE</th>
+<th>CEKLIS</th>
 <th>Aksi</th>
 </tr>
 </thead>
@@ -98,7 +86,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 // ================== MODE ==================
-const role = "admin";
+const role = "admin"; // admin / user
 
 // ================== FIREBASE ==================
 const firebaseConfig = {
@@ -124,7 +112,7 @@ window.tambahData = async function() {
     nama,
     liter,
     ceklis: false,
-    dex: false,
+    dexlite: false,
     dexLock: false
   });
 
@@ -136,14 +124,8 @@ window.loadData = async function() {
   const snap = await getDocs(collection(db, "drum2"));
   let html = "";
 
-  let totalCeklisLiter = 0;
-  let totalDex = 0;
-
   snap.forEach((d) => {
     const data = d.data();
-
-    if (data.ceklis) totalCeklisLiter += data.liter;
-    if (data.dex) totalDex += 50000;
 
     let lockText = data.dexLock ? "LOCK" : "OPEN";
     let lockClass = data.dexLock ? "lock-on" : "lock-off";
@@ -153,51 +135,68 @@ window.loadData = async function() {
         <td>${data.nama}</td>
         <td>${data.liter}</td>
 
-        <!-- DEX TEXT ONLY (ADMIN CLICK LOCK) -->
-        <td onclick="toggleDexLock('${d.id}', ${data.dexLock})">
-          <span class="${lockClass}">DEX (${lockText})</span>
-        </td>
-
-        <!-- ✔ CEKLIS ONLY USER CONTROL -->
+        <!-- 🔷 DEXLITE (INI YANG KAMU MAU) -->
         <td>
           <input type="checkbox"
-            ${role === "admin" ? "disabled" : ""}
+            ${data.dexlite ? "checked" : ""}
+            ${data.dexLock ? "disabled" : ""}
+            onchange="toggleDexlite('${d.id}', this.checked)">
+          
+          ${
+            role === "admin"
+              ? `<span onclick="toggleLock('${d.id}', ${data.dexLock})"
+                        class="${lockClass}">
+                  DEX (${lockText})
+                </span>`
+              : ""
+          }
+        </td>
+
+        <!-- ✔ CEKLIS -->
+        <td>
+          <input type="checkbox"
             ${data.ceklis ? "checked" : ""}
+            ${role === "admin" ? "disabled" : ""}
             onchange="toggleCeklis('${d.id}', this.checked)">
         </td>
 
         <td>
-          <button class="hapus" onclick="hapusData('${d.id}')">Hapus</button>
+          <button onclick="hapusData('${d.id}')">Hapus</button>
         </td>
       </tr>
     `;
   });
 
   document.getElementById("tbody").innerHTML = html;
-
-  let totalSemua = (totalCeklisLiter * 6800) + totalDex;
-
-  document.getElementById("totalSemua").innerText =
-    totalSemua.toLocaleString("id-ID");
-
-  document.getElementById("totalCeklis").innerText = totalCeklisLiter;
-
-  document.getElementById("totalDex").innerText =
-    totalDex.toLocaleString("id-ID");
 }
 
-// ================== LOCK DEX PER BARIS ==================
-window.toggleDexLock = async function(id, current) {
+// ================== TOGGLE DEXLITE ==================
+window.toggleDexlite = async function(id, status) {
   await updateDoc(doc(db, "drum2", id), {
-    dexLock: !current
+    dexlite: status
   });
   loadData();
 }
 
-// ================== CEKLIS (BLOCK ADMIN) ==================
+// ================== LOCK DEX PER BARIS (ADMIN) ==================
+window.toggleLock = async function(id, current) {
+  if (role !== "admin") return;
+
+  await updateDoc(doc(db, "drum2", id), {
+    dexLock: !current
+  });
+
+  loadData();
+}
+
+// ================== CEKLIS ==================
 window.toggleCeklis = async function(id, status) {
   if (role === "admin") return;
-  await updateDoc(doc(db, "drum2", id), { ceklis: status });
+
+  await updateDoc(doc(db, "drum2", id), {
+    ceklis: status
+  });
+
   loadData();
 }
 
@@ -205,20 +204,6 @@ window.toggleCeklis = async function(id, status) {
 window.hapusData = async function(id) {
   await deleteDoc(doc(db, "drum2", id));
   loadData();
-}
-
-// ================== COPY ==================
-window.copyData = async function() {
-  const snap = await getDocs(collection(db, "drum2"));
-  let teks = "";
-
-  snap.forEach((d) => {
-    const data = d.data();
-    teks += `${data.nama} - ${data.liter}L\n`;
-  });
-
-  navigator.clipboard.writeText(teks);
-  alert("Copied!");
 }
 
 loadData();
