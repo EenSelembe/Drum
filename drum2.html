@@ -9,8 +9,7 @@ body {
   font-family: Arial;
   background: #121212;
   color: white;
-  margin: 0;
-  padding: 10px;
+  padding: 20px;
 }
 
 h2 {
@@ -20,47 +19,50 @@ h2 {
 button {
   padding: 8px 12px;
   margin-bottom: 10px;
-  background: green;
-  color: white;
   border: none;
   border-radius: 5px;
+  background: green;
+  color: white;
   cursor: pointer;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  background: #1e1e1e;
 }
 
 th, td {
-  border: 1px solid #444;
+  border: 1px solid #333;
   padding: 8px;
   text-align: center;
 }
 
-th {
-  background: #1e1e1e;
-}
-
-input[type="text"], input[type="number"] {
+input[type="text"] {
   width: 90%;
   padding: 5px;
+  text-transform: uppercase;
 }
 
-input[type="checkbox"] {
-  transform: scale(1.2);
+input[type="number"] {
+  width: 60px;
+  padding: 5px;
+  text-align: center;
+}
+
+th:nth-child(2), td:nth-child(2) {
+  width: 80px;
 }
 
 .dex-off {
-  background: red !important;
+  background: #5a1a1a;
 }
 
 .total-box {
-  margin-top: 15px;
-  padding: 12px;
+  margin-top: 20px;
   background: #1e1e1e;
+  padding: 10px;
   border-radius: 8px;
-  line-height: 1.8;
 }
 </style>
 </head>
@@ -69,177 +71,173 @@ input[type="checkbox"] {
 
 <h2>DRUM 2</h2>
 
-<button id="tambahBtn" onclick="tambahData()">+ Tambah Data</button>
+<button onclick="tambahData()">+ Tambah</button>
 
 <table>
-  <thead>
-    <tr>
-      <th>Nama</th>
-      <th>Liter</th>
-      <th>Ceklis</th>
-      <th>DEX (+50rb)</th>
-    </tr>
-  </thead>
-
-  <tbody id="bodyData"></tbody>
+<thead>
+<tr>
+  <th>Nama</th>
+  <th>Liter</th>
+  <th>Ceklis</th>
+  <th>Dex</th>
+  <th>Total</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
 </table>
 
 <div class="total-box">
   <p>Total Liter: <span id="totalLiter">0</span></p>
-  <p>Total DEX: <span id="totalDex">0</span></p>
-  <p>Total Uang Liter: Rp <span id="uangLiter">0</span></p>
+  <p>Total Dex: <span id="totalDex">0</span></p>
+  <p>Total Uang Liter: Rp <span id="totalUang">0</span></p>
   <p><b>Total Keseluruhan: Rp <span id="grandTotal">0</span></b></p>
 </div>
 
 <script>
+let data = JSON.parse(localStorage.getItem("drum2")) || [];
+const role = localStorage.getItem("role");
 
-const role = localStorage.getItem("role"); // admin / user
-
-let data = [
-  { nama: "", liter: 0, dexOff: false }
-];
+function simpan(){
+  localStorage.setItem("drum2", JSON.stringify(data));
+}
 
 function tambahData(){
-  if(role !== "admin") return;
+  if(role !== "admin"){
+    alert("Hanya admin!");
+    return;
+  }
 
-  data.push({ nama: "", liter: 0, dexOff: false });
+  data.push({
+    nama: "",
+    liter: 0,
+    ceklis: false,
+    dex: false,
+    dexOff: false
+  });
+
+  simpan();
   render();
 }
 
 function render(){
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
 
-  const body = document.getElementById("bodyData");
-  body.innerHTML = "";
+  let totalLiter = 0;
+  let totalDex = 0;
+  let totalUang = 0;
 
-  data.forEach((item, index) => {
-
+  data.forEach((item, i)=>{
     const tr = document.createElement("tr");
 
-    // Nama
+    // NAMA
     const tdNama = document.createElement("td");
     const inputNama = document.createElement("input");
-    inputNama.type = "text";
     inputNama.value = item.nama;
-    inputNama.oninput = e => item.nama = e.target.value;
 
-    if(role !== "admin") inputNama.disabled = true;
+    inputNama.oninput = e => {
+      const val = e.target.value.toUpperCase();
+      e.target.value = val;
+      item.nama = val;
+      simpan();
+    };
 
     tdNama.appendChild(inputNama);
 
-    // Liter
+    // LITER
     const tdLiter = document.createElement("td");
     const inputLiter = document.createElement("input");
     inputLiter.type = "number";
     inputLiter.value = item.liter;
 
-    inputLiter.oninput = e => {
-      item.liter = Number(e.target.value);
-      hitung();
+    inputLiter.oninput = e=>{
+      item.liter = parseFloat(e.target.value) || 0;
+      simpan();
+      render();
     };
-
-    if(role !== "admin") inputLiter.disabled = true;
 
     tdLiter.appendChild(inputLiter);
 
-    // Ceklis biasa
+    // CEKLIS
     const tdCeklis = document.createElement("td");
-    const cek1 = document.createElement("input");
-    cek1.type = "checkbox";
-    cek1.onchange = hitung;
+    const ceklis = document.createElement("input");
+    ceklis.type = "checkbox";
+    ceklis.checked = item.ceklis;
 
-    // ❌ admin tidak bisa ceklis
-    if(role === "admin") cek1.disabled = true;
+    ceklis.disabled = (role === "admin");
 
-    tdCeklis.appendChild(cek1);
+    ceklis.onchange = ()=>{
+      item.ceklis = ceklis.checked;
+      simpan();
+      render();
+    };
+
+    tdCeklis.appendChild(ceklis);
 
     // DEX
     const tdDex = document.createElement("td");
-    const cek2 = document.createElement("input");
-    cek2.type = "checkbox";
-    cek2.onchange = hitung;
+    const dex = document.createElement("input");
+    dex.type = "checkbox";
+    dex.checked = item.dex;
 
-    // ❌ admin tidak bisa ceklis
-    if(role === "admin") cek2.disabled = true;
+    dex.disabled = (role === "admin") || item.dexOff;
 
-    // 🔥 ADMIN bisa tutup dex
-    if(role === "admin"){
-      tdDex.onclick = function(e){
-        if(e.target.tagName !== "INPUT"){
-          item.dexOff = !item.dexOff;
-
-          if(item.dexOff){
-            tdDex.classList.add("dex-off");
-          } else {
-            tdDex.classList.remove("dex-off");
-          }
-
-          render();
-        }
-      };
-    }
-
-    // kalau dex ditutup → user tidak bisa klik
     if(item.dexOff){
-      cek2.disabled = true;
       tdDex.classList.add("dex-off");
     }
 
-    tdDex.appendChild(cek2);
+    tdDex.onclick = ()=>{
+      if(role !== "admin") return;
+
+      item.dexOff = !item.dexOff;
+      if(item.dexOff) item.dex = false;
+
+      simpan();
+      render();
+    };
+
+    dex.onchange = ()=>{
+      item.dex = dex.checked;
+      simpan();
+      render();
+    };
+
+    tdDex.appendChild(dex);
+
+    // TOTAL
+    const tdTotal = document.createElement("td");
+
+    let total = 0;
+
+    if(item.ceklis){
+      total += item.liter * 6800;
+      totalLiter += item.liter;
+      totalUang += item.liter * 6800;
+    }
+
+    if(item.dex){
+      total += 50000;
+      totalDex += 50000;
+    }
+
+    tdTotal.innerText = "Rp " + total.toLocaleString();
 
     tr.appendChild(tdNama);
     tr.appendChild(tdLiter);
     tr.appendChild(tdCeklis);
     tr.appendChild(tdDex);
+    tr.appendChild(tdTotal);
 
-    body.appendChild(tr);
-
+    tbody.appendChild(tr);
   });
-
-  // tombol tambah hanya admin
-  if(role !== "admin"){
-    document.getElementById("tambahBtn").style.display = "none";
-  }
-
-  hitung();
-}
-
-function hitung(){
-
-  let totalLiter = 0;
-  let totalDex = 0;
-  let uangLiter = 0;
-
-  const rows = document.querySelectorAll("#bodyData tr");
-
-  rows.forEach(row => {
-
-    const liter = Number(row.children[1].querySelector("input").value);
-    const cek1 = row.children[2].querySelector("input").checked;
-    const cek2 = row.children[3].querySelector("input").checked;
-
-    if(cek1){
-      totalLiter += liter;
-      uangLiter += liter * 6800;
-    }
-
-    if(cek2){
-      totalDex += 1;
-    }
-
-  });
-
-  const uangDex = totalDex * 50000;
-  const grandTotal = uangLiter + uangDex;
 
   document.getElementById("totalLiter").innerText = totalLiter;
-  document.getElementById("totalDex").innerText = totalDex;
-  document.getElementById("uangLiter").innerText = uangLiter.toLocaleString();
-  document.getElementById("grandTotal").innerText = grandTotal.toLocaleString();
-
+  document.getElementById("totalDex").innerText = totalDex.toLocaleString();
+  document.getElementById("totalUang").innerText = totalUang.toLocaleString();
+  document.getElementById("grandTotal").innerText = (totalUang + totalDex).toLocaleString();
 }
 
 render();
-
 </script>
 
 </body>
