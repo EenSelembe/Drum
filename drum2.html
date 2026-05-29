@@ -20,8 +20,8 @@ input {
   font-size: 16px;
 }
 
-#nama { width: 55%; }
-#liter { width: 25%; }
+#nama { width: 50%; }
+#liter { width: 20%; }
 
 button {
   padding: 10px;
@@ -59,7 +59,8 @@ th, td {
 <table>
 <thead>
 <tr>
-<th>Ceklis</th>
+<th>✔</th>
+<th>DEX</th>
 <th>Nama</th>
 <th>Liter</th>
 <th>Aksi</th>
@@ -102,7 +103,8 @@ window.tambahData = async function() {
   await addDoc(collection(db, "drum2"), {
     nama,
     liter,
-    ceklis: false
+    ceklis: false,
+    dex: false
   });
 
   document.getElementById("nama").value = "";
@@ -126,6 +128,11 @@ window.loadData = async function() {
             ${data.ceklis ? "checked" : ""}
             onchange="toggleCeklis('${d.id}', this.checked)">
         </td>
+        <td>
+          <input type="checkbox"
+            ${data.dex ? "checked" : ""}
+            onchange="toggleDex('${d.id}', this.checked)">
+        </td>
         <td>${data.nama}</td>
         <td>${data.liter}</td>
         <td>
@@ -142,6 +149,13 @@ window.loadData = async function() {
 window.toggleCeklis = async function(id, status) {
   await updateDoc(doc(db, "drum2", id), {
     ceklis: status
+  });
+}
+
+// ========= DEX =========
+window.toggleDex = async function(id, status) {
+  await updateDoc(doc(db, "drum2", id), {
+    dex: status
   });
 }
 
