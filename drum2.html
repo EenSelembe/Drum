@@ -7,272 +7,172 @@
 <style>
 body {
   font-family: Arial;
-  background: #121212;
-  color: white;
-  padding: 20px;
+  background: #111;
+  color: #fff;
+  padding: 10px;
 }
 
 h2 {
   text-align: center;
 }
 
-button {
-  padding: 8px 12px;
-  background: green;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  margin-bottom: 10px;
+input {
+  padding: 10px;
+  margin: 5px;
+  font-size: 16px;
 }
 
-.btn-hapus {
-  background: red;
+#nama {
+  width: 60%;
+}
+
+#liter {
+  width: 30%;
+}
+
+button {
+  padding: 10px;
+  margin: 5px;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  background: #1e1e1e;
+  margin-top: 10px;
 }
 
 th, td {
-  border: 1px solid #444;
+  border: 1px solid #555;
   padding: 8px;
   text-align: center;
 }
 
-input[type="text"] {
-  width: 95%;
-  padding: 5px;
-  text-transform: uppercase;
+th {
+  background: #222;
 }
 
-input[type="number"] {
-  width: 70px;
-  text-align: center;
+.copy {
+  background: green;
+  color: white;
 }
 
-.dex-off {
-  background: #8b0000;
-}
-
-.total-box {
-  margin-top: 20px;
-  background: #1e1e1e;
-  padding: 10px;
+.hapus {
+  background: red;
+  color: white;
 }
 </style>
 </head>
 
 <body>
 
-<h2>DRUM 2</h2>
+<h2>DATA DRUM 2</h2>
 
-<button onclick="tambahData()">+ Tambah</button>
+<input type="text" id="nama" placeholder="Nama">
+<input type="number" id="liter" placeholder="Liter">
+
+<button onclick="tambahData()">Tambah</button>
+<button class="copy" onclick="copyData()">Copy</button>
 
 <table>
 <thead>
 <tr>
-  <th>Nama</th>
-  <th>Liter</th>
-  <th>Ceklis</th>
-  <th>Dex</th>
-  <th>Total</th>
-  <th>Aksi</th>
+<th>Nama</th>
+<th>Liter</th>
+<th>Aksi</th>
 </tr>
 </thead>
 <tbody id="tbody"></tbody>
 </table>
 
-<div class="total-box">
-  <p>Total Liter: <span id="totalLiter">0</span></p>
-  <p>Total Dex: <span id="totalDex">0</span></p>
-  <p>Total Uang: Rp <span id="totalUang">0</span></p>
-  <p><b>Total Keseluruhan: Rp <span id="grandTotal">0</span></b></p>
-</div>
-
-<script>
-let data = [];
-const role = localStorage.getItem("role");
-
-// TAMBAH DATA
-function tambahData(){
-  if(role !== "admin") return alert("Hanya admin");
-
-  data.push({
-    nama: "",
-    liter: 0,
-    ceklis: false,
-    dex: false,
-    dexOff: false
-  });
-
-  simpanFirebase(data);
-}
-
-// HAPUS DATA
-function hapusData(i){
-  if(!confirm("Hapus data?")) return;
-  data.splice(i,1);
-  simpanFirebase(data);
-}
-
-// RENDER
-function render(){
-  const tbody = document.getElementById("tbody");
-  tbody.innerHTML = "";
-
-  let totalLiter=0, totalDex=0, totalUang=0;
-
-  data.forEach((item,i)=>{
-    const tr = document.createElement("tr");
-
-    // NAMA
-    const tdNama = document.createElement("td");
-    const inputNama = document.createElement("input");
-    inputNama.value = item.nama;
-
-    inputNama.oninput = e=>{
-      e.target.value = e.target.value.toUpperCase();
-    };
-
-    inputNama.onchange = e=>{
-      item.nama = e.target.value;
-      simpanFirebase(data);
-    };
-
-    tdNama.appendChild(inputNama);
-
-    // LITER
-    const tdLiter = document.createElement("td");
-    const inputLiter = document.createElement("input");
-    inputLiter.type = "number";
-    inputLiter.value = item.liter;
-
-    inputLiter.onchange = e=>{
-      item.liter = parseFloat(e.target.value)||0;
-      simpanFirebase(data);
-    };
-
-    tdLiter.appendChild(inputLiter);
-
-    // CEKLIS
-    const tdCek = document.createElement("td");
-    const cek = document.createElement("input");
-    cek.type="checkbox";
-    cek.checked=item.ceklis;
-    cek.disabled = (role==="admin");
-
-    cek.onchange=()=>{
-      item.ceklis=cek.checked;
-      simpanFirebase(data);
-    };
-
-    tdCek.appendChild(cek);
-
-    // DEX
-    const tdDex=document.createElement("td");
-    const dex=document.createElement("input");
-    dex.type="checkbox";
-    dex.checked=item.dex;
-    dex.disabled = (role==="admin")||item.dexOff;
-
-    if(item.dexOff) tdDex.classList.add("dex-off");
-
-    tdDex.onclick=()=>{
-      if(role!=="admin") return;
-      item.dexOff=!item.dexOff;
-      if(item.dexOff) item.dex=false;
-      simpanFirebase(data);
-    };
-
-    dex.onchange=()=>{
-      item.dex=dex.checked;
-      simpanFirebase(data);
-    };
-
-    tdDex.appendChild(dex);
-
-    // TOTAL
-    const tdTotal=document.createElement("td");
-    let total=0;
-
-    if(item.ceklis){
-      total+=item.liter*6800;
-      totalLiter+=item.liter;
-      totalUang+=item.liter*6800;
-    }
-
-    if(item.dex){
-      total+=50000;
-      totalDex+=50000;
-    }
-
-    tdTotal.innerText="Rp "+total.toLocaleString();
-
-    // AKSI
-    const tdAksi=document.createElement("td");
-
-    if(role==="admin"){
-      const btn=document.createElement("button");
-      btn.innerText="Hapus";
-      btn.className="btn-hapus";
-      btn.onclick=()=>hapusData(i);
-      tdAksi.appendChild(btn);
-    }
-
-    tr.appendChild(tdNama);
-    tr.appendChild(tdLiter);
-    tr.appendChild(tdCek);
-    tr.appendChild(tdDex);
-    tr.appendChild(tdTotal);
-    tr.appendChild(tdAksi);
-
-    tbody.appendChild(tr);
-  });
-
-  document.getElementById("totalLiter").innerText=totalLiter;
-  document.getElementById("totalDex").innerText=totalDex.toLocaleString();
-  document.getElementById("totalUang").innerText=totalUang.toLocaleString();
-  document.getElementById("grandTotal").innerText=(totalUang+totalDex).toLocaleString();
-}
-</script>
-
-<!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
   authDomain: "drum-26d1c.firebaseapp.com",
   projectId: "drum-26d1c",
-  storageBucket: "drum-26d1c.firebasestorage.app",
+  storageBucket: "drum-26d1c.appspot.com",
   messagingSenderId: "960892789351",
-  appId: "1:960892789351:web:ca1c653c85cab59586eac2",
-  measurementId: "G-Z85SMGMZT7"
+  appId: "1:960892789351:web:ca1c653c85cab59586eac2"
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+const db = getFirestore(app);
 
-// SIMPAN
-window.simpanFirebase = function(data){
-  set(ref(db,"drum2"), data);
-}
+// ================= TAMBAH DATA =================
+window.tambahData = async function() {
+  const namaInput = document.getElementById("nama");
+  const literInput = document.getElementById("liter");
 
-// LOAD REALTIME
-window.loadFirebase = function(callback){
-  onValue(ref(db,"drum2"), snap=>{
-    callback(snap.val() || []);
+  const nama = namaInput.value.toUpperCase();
+  const liter = parseFloat(literInput.value);
+
+  if (!nama || !liter) {
+    alert("Isi semua data!");
+    return;
+  }
+
+  await addDoc(collection(db, "drum2"), {
+    nama,
+    liter
   });
+
+  namaInput.value = "";
+  literInput.value = "";
+
+  loadData();
 }
 
-// START
-loadFirebase((val)=>{
-  data = val;
-  render();
-});
+// ================= LOAD DATA =================
+window.loadData = async function() {
+  const querySnapshot = await getDocs(collection(db, "drum2"));
+  let html = "";
+
+  querySnapshot.forEach((docSnap) => {
+    const d = docSnap.data();
+
+    html += `
+      <tr>
+        <td>${d.nama}</td>
+        <td>${d.liter}</td>
+        <td>
+          <button class="hapus" onclick="hapusData('${docSnap.id}')">Hapus</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("tbody").innerHTML = html;
+}
+
+// ================= HAPUS =================
+window.hapusData = async function(id) {
+  if(confirm("Hapus data ini?")){
+    await deleteDoc(doc(db, "drum2", id));
+    loadData();
+  }
+}
+
+// ================= COPY =================
+window.copyData = async function() {
+  const querySnapshot = await getDocs(collection(db, "drum2"));
+  let teks = "";
+
+  querySnapshot.forEach((docSnap) => {
+    const d = docSnap.data();
+    teks += `${d.nama} - ${d.liter}L\n`;
+  });
+
+  navigator.clipboard.writeText(teks);
+  alert("Data berhasil dicopy!");
+}
+
+// ================= LOAD AWAL =================
+loadData();
+
 </script>
 
 </body>
