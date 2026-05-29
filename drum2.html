@@ -43,20 +43,14 @@ th, td {
 .copy { background: green; color: white; }
 .hapus { background: red; color: white; }
 
-.total-box {
-  margin-top: 10px;
-  padding: 10px;
-  background: #222;
-  border: 1px solid #555;
-}
-
-/* 🔥 warna status */
-.dex-on {
+.lock-on {
   color: #00ff7f;
+  font-weight: bold;
 }
 
-.dex-off {
+.lock-off {
   color: #ff4d4d;
+  font-weight: bold;
 }
 </style>
 </head>
@@ -68,11 +62,9 @@ th, td {
 <input type="text" id="nama" placeholder="Nama">
 <input type="number" id="liter" placeholder="Liter">
 
-<div id="adminArea"></div>
-
 <button class="copy" onclick="copyData()">Copy</button>
 
-<div class="total-box">
+<div style="margin:10px 0;">
   Total Semua: <span id="totalSemua">0</span> Rp<br>
   Total ✔: <span id="totalCeklis">0</span> L<br>
   Total DEX: <span id="totalDex">0</span> Rp
@@ -83,12 +75,7 @@ th, td {
 <tr>
 <th>Nama</th>
 <th>Liter</th>
-
-<!-- 🔥 CLICK HEADER DEX -->
-<th onclick="toggleDexSystem()" style="cursor:pointer;">
-DEX (<span id="dexStatus" class="dex-on">ON</span>)
-</th>
-
+<th>DEX (klik untuk lock)</th>
 <th>✔</th>
 <th>Aksi</th>
 </tr>
@@ -112,9 +99,6 @@ import {
 // ================== MODE ==================
 const role = "admin";
 
-// ================== DEX CONTROL ==================
-let dexEnabled = true;
-
 // ================== FIREBASE ==================
 const firebaseConfig = {
   apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
@@ -128,14 +112,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ================== TOGGLE DEX (klik header) ==================
-window.toggleDexSystem = function() {
-  if (role !== "admin") return;
-
-  dexEnabled = !dexEnabled;
-  loadData();
-}
-
 // ================== TAMBAH ==================
 window.tambahData = async function() {
   const nama = document.getElementById("nama").value.toUpperCase();
@@ -147,7 +123,8 @@ window.tambahData = async function() {
     nama,
     liter,
     ceklis: false,
-    dex: false
+    dex: false,
+    dexLock: false
   });
 
   loadData();
@@ -167,20 +144,24 @@ window.loadData = async function() {
     if (data.ceklis) totalCeklisLiter += data.liter;
     if (data.dex) totalDex += 50000;
 
+    let lockText = data.dexLock ? "LOCK" : "OPEN";
+    let lockClass = data.dexLock ? "lock-on" : "lock-off";
+
     html += `
       <tr>
         <td>${data.nama}</td>
         <td>${data.liter}</td>
 
-        <!-- 🔷 DEX -->
-        <td>
+        <!-- DEX per baris -->
+        <td onclick="toggleDexLock('${d.id}', ${data.dexLock})" style="cursor:pointer;">
           <input type="checkbox"
             ${data.dex ? "checked" : ""}
-            ${(!dexEnabled) ? "disabled" : ""}
+            ${data.dexLock ? "disabled" : ""}
             onchange="toggleDex('${d.id}', this.checked)">
+          <span class="${lockClass}">(${lockText})</span>
         </td>
 
-        <!-- ✔ CEKLIS -->
+        <!-- CEKLIS -->
         <td>
           <input type="checkbox"
             ${data.ceklis ? "checked" : ""}
@@ -196,12 +177,6 @@ window.loadData = async function() {
 
   document.getElementById("tbody").innerHTML = html;
 
-  // ================== STATUS HEADER ==================
-  const status = document.getElementById("dexStatus");
-  status.innerText = dexEnabled ? "ON" : "OFF";
-  status.className = dexEnabled ? "dex-on" : "dex-off";
-
-  // ================== TOTAL ==================
   let totalSemua = (totalCeklisLiter * 6800) + totalDex;
 
   document.getElementById("totalSemua").innerText =
@@ -213,6 +188,14 @@ window.loadData = async function() {
     totalDex.toLocaleString("id-ID");
 }
 
+// ================== TOGGLE DEX LOCK (PER BARIS) ==================
+window.toggleDexLock = async function(id, currentLock) {
+  await updateDoc(doc(db, "drum2", id), {
+    dexLock: !currentLock
+  });
+  loadData();
+}
+
 // ================== CEKLIS ==================
 window.toggleCeklis = async function(id, status) {
   await updateDoc(doc(db, "drum2", id), { ceklis: status });
@@ -221,7 +204,6 @@ window.toggleCeklis = async function(id, status) {
 
 // ================== DEX ==================
 window.toggleDex = async function(id, status) {
-  if (!dexEnabled) return;
   await updateDoc(doc(db, "drum2", id), { dex: status });
   loadData();
 }
