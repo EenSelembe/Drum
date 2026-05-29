@@ -36,9 +36,15 @@ input {
   font-size: 16px;
 }
 
+/* 🔥 NAMA DIPERBESAR */
 .input-nama {
-  width: 120px;
+  width: 200px;
   text-transform: uppercase;
+}
+
+/* 🔥 KOLOM NAMA IKUT LEBAR */
+td:first-child, th:first-child {
+  min-width: 200px;
 }
 
 .input-jumlah {
@@ -54,7 +60,7 @@ input {
   padding: 2px;
 }
 
-/* 🔴 merah saat ditutup */
+/* 🔴 MERAH JIKA DISABLE */
 .dex-disabled {
   background: #3a0000 !important;
   border: 1px solid red;
@@ -112,6 +118,7 @@ for(let i=1;i<=20;i++){
 </table>
 
 <h3>Total Semua: <span id="grandTotal">0</span></h3>
+<h3>Total Ceklis Semua: <span id="grandCeklis">0</span></h3>
 
 <script type="module">
 
@@ -154,8 +161,8 @@ document.getElementById("btnTambah").onclick = async ()=>{
     nama:"",
     jumlah:0,
     ceklis:Array(40).fill(false),
-    dex: Array.from({length:20},()=>({cek:false})),
-    dexDisabled:false,
+    dex:Array.from({length:20},()=>({cek:false})),
+    dexDisabled:Array(20).fill(false),
     createdAt: Date.now()
   });
 };
@@ -169,6 +176,7 @@ onSnapshot(q, snapshot => {
   table.innerHTML="";
 
   let grand = 0;
+  let grandCeklis = 0;
 
   snapshot.forEach(docSnap=>{
 
@@ -177,6 +185,7 @@ onSnapshot(q, snapshot => {
 
     const ceklis = data.ceklis || Array(40).fill(false);
     const dex = data.dex || Array.from({length:20},()=>({cek:false}));
+    const dexDisabled = data.dexDisabled || Array(20).fill(false);
 
     let totalCeklis = 0;
     let totalDex = 0;
@@ -217,10 +226,10 @@ onSnapshot(q, snapshot => {
       c1.onchange=()=>updateCeklis(id,i*2,c1.checked);
       c2.onchange=()=>updateCeklis(id,i*2+1,c2.checked);
 
-      // 🔥 ADMIN TIDAK BISA CEKLIS
+      // ADMIN TIDAK BISA CEKLIS
       if(role==="admin"){
-        c1.disabled = true;
-        c2.disabled = true;
+        c1.disabled=true;
+        c2.disabled=true;
       }
 
       if(c1.checked) totalCeklis += 0.5;
@@ -229,24 +238,27 @@ onSnapshot(q, snapshot => {
       td.appendChild(c1);
       td.appendChild(c2);
 
-      // DEX BOX
+      // DEX
       const dexBox = document.createElement("div");
       dexBox.className="dex-box";
 
-      // 🔴 warna merah kalau ditutup
-      if(data.dexDisabled){
+      if(dexDisabled[i]){
         dexBox.classList.add("dex-disabled");
       }
 
-      // 🔥 klik kotak untuk toggle
+      // TOGGLE PER KOLOM
       if(role==="admin"){
         dexBox.style.cursor="pointer";
         dexBox.title="Klik untuk buka/tutup Dex";
 
         dexBox.onclick = async ()=>{
-          await updateDoc(doc(db,"drum",id),{
-            dexDisabled: !data.dexDisabled
-          });
+          const ref=doc(db,"drum",id);
+          const snap=await getDoc(ref);
+          let arr=snap.data().dexDisabled || Array(20).fill(false);
+
+          arr[i] = !arr[i];
+
+          await updateDoc(ref,{dexDisabled:arr});
         };
       }
 
@@ -254,8 +266,7 @@ onSnapshot(q, snapshot => {
       dexCek.type="checkbox";
       dexCek.checked=!!dex[i]?.cek;
 
-      // 🔥 DISABLE FINAL
-      dexCek.disabled = data.dexDisabled || role==="admin";
+      dexCek.disabled = dexDisabled[i] || role==="admin";
 
       dexCek.onchange=()=>updateDex(id,i,"cek",dexCek.checked);
 
@@ -273,7 +284,6 @@ onSnapshot(q, snapshot => {
       tr.appendChild(td);
     }
 
-    // 💰 HITUNG UANG
     const uangCeklis = totalCeklis * 200 * 6800;
     const uangDex = (totalDex / 50) * 50000;
     const uang = uangCeklis + uangDex;
@@ -283,6 +293,7 @@ onSnapshot(q, snapshot => {
     tr.appendChild(tdWrap(uang.toLocaleString("id-ID")));
 
     grand += uang;
+    grandCeklis += totalCeklis;
 
     if(role==="admin"){
       const btn=document.createElement("button");
@@ -297,6 +308,9 @@ onSnapshot(q, snapshot => {
 
   document.getElementById("grandTotal").innerText =
     grand.toLocaleString("id-ID");
+
+  document.getElementById("grandCeklis").innerText =
+    grandCeklis;
 
 });
 
