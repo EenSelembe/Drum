@@ -95,7 +95,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 // ================== MODE ==================
-const role = "admin"; // ubah jadi "user"
+const role = "admin"; // ubah ke "user"
 
 // ================== FIREBASE ==================
 const firebaseConfig = {
@@ -144,17 +144,18 @@ window.loadData = async function() {
   const snap = await getDocs(collection(db, "drum2"));
   let html = "";
 
-  let totalSemuaLiter = 0;
-  let totalCeklis = 0;
+  let totalCeklisLiter = 0;
   let totalDex = 0;
 
   snap.forEach((d) => {
     const data = d.data();
 
-    totalSemuaLiter += data.liter;
-    if (data.ceklis) totalCeklis += data.liter;
+    // ✔ hanya yang sudah CEKLIS
+    if (data.ceklis) {
+      totalCeklisLiter += data.liter;
+    }
 
-    // DEX = 1 klik = 50.000
+    // 🔷 DEX flat
     if (data.dex) totalDex += 50000;
 
     html += `
@@ -182,14 +183,14 @@ window.loadData = async function() {
 
   document.getElementById("tbody").innerHTML = html;
 
-  // ================== RUMUS BARU ==================
-  let totalSemuaHarga = (totalSemuaLiter * 6800) + totalDex;
+  // ================== RUMUS FINAL ==================
+  let totalSemuaHarga = (totalCeklisLiter * 6800) + totalDex;
 
   document.getElementById("totalSemua").innerText =
     totalSemuaHarga.toLocaleString("id-ID");
 
   document.getElementById("totalCeklis").innerText =
-    totalCeklis;
+    totalCeklisLiter;
 
   document.getElementById("totalDex").innerText =
     totalDex.toLocaleString("id-ID");
