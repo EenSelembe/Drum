@@ -59,10 +59,10 @@ th, td {
 <table>
 <thead>
 <tr>
-<th>✔</th>
-<th>DEX</th>
 <th>Nama</th>
 <th>Liter</th>
+<th>✔</th>
+<th>DEX</th>
 <th>Aksi</th>
 </tr>
 </thead>
@@ -93,7 +93,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ========= TAMBAH =========
+// TAMBAH
 window.tambahData = async function() {
   const nama = document.getElementById("nama").value.toUpperCase();
   const liter = parseFloat(document.getElementById("liter").value);
@@ -113,7 +113,7 @@ window.tambahData = async function() {
   loadData();
 }
 
-// ========= LOAD =========
+// LOAD
 window.loadData = async function() {
   const snap = await getDocs(collection(db, "drum2"));
   let html = "";
@@ -123,6 +123,8 @@ window.loadData = async function() {
 
     html += `
       <tr>
+        <td>${data.nama}</td>
+        <td>${data.liter}</td>
         <td>
           <input type="checkbox"
             ${data.ceklis ? "checked" : ""}
@@ -133,8 +135,6 @@ window.loadData = async function() {
             ${data.dex ? "checked" : ""}
             onchange="toggleDex('${d.id}', this.checked)">
         </td>
-        <td>${data.nama}</td>
-        <td>${data.liter}</td>
         <td>
           <button class="hapus" onclick="hapusData('${d.id}')">Hapus</button>
         </td>
@@ -145,21 +145,21 @@ window.loadData = async function() {
   document.getElementById("tbody").innerHTML = html;
 }
 
-// ========= CEKLIS =========
+// CEKLIS
 window.toggleCeklis = async function(id, status) {
   await updateDoc(doc(db, "drum2", id), {
     ceklis: status
   });
 }
 
-// ========= DEX =========
+// DEX
 window.toggleDex = async function(id, status) {
   await updateDoc(doc(db, "drum2", id), {
     dex: status
   });
 }
 
-// ========= HAPUS =========
+// HAPUS
 window.hapusData = async function(id) {
   if (confirm("Hapus data?")) {
     await deleteDoc(doc(db, "drum2", id));
@@ -167,7 +167,7 @@ window.hapusData = async function(id) {
   }
 }
 
-// ========= COPY =========
+// COPY
 window.copyData = async function() {
   const snap = await getDocs(collection(db, "drum2"));
   let teks = "";
