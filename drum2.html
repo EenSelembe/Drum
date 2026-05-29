@@ -49,7 +49,6 @@ th, td {
   background: #222;
   border: 1px solid #555;
 }
-
 </style>
 </head>
 
@@ -60,7 +59,6 @@ th, td {
 <input type="text" id="nama" placeholder="Nama">
 <input type="number" id="liter" placeholder="Liter">
 
-<!-- tombol hanya untuk ADMIN -->
 <div id="adminArea"></div>
 
 <button class="copy" onclick="copyData()">Copy</button>
@@ -68,7 +66,7 @@ th, td {
 <div class="total-box">
   Total Semua: <span id="totalSemua">0</span> L<br>
   Total ✔: <span id="totalCeklis">0</span> L<br>
-  Total DEX: <span id="totalDex">0</span> L
+  Total DEX: <span id="totalDex">0</span> Rp
 </div>
 
 <table>
@@ -97,7 +95,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 // ================== MODE ==================
-const role = "admin"; // ganti "user"
+const role = "admin"; // ubah ke "user"
 
 // ================== FIREBASE ==================
 const firebaseConfig = {
@@ -155,7 +153,9 @@ window.loadData = async function() {
 
     totalSemua += data.liter;
     if (data.ceklis) totalCeklis += data.liter;
-    if (data.dex) totalDex += data.liter;
+
+    // ✅ FIX DEX: 50.000 per liter
+    if (data.dex) totalDex += data.liter * 50000;
 
     html += `
       <tr>
@@ -184,7 +184,7 @@ window.loadData = async function() {
 
   document.getElementById("totalSemua").innerText = totalSemua;
   document.getElementById("totalCeklis").innerText = totalCeklis;
-  document.getElementById("totalDex").innerText = totalDex;
+  document.getElementById("totalDex").innerText = totalDex.toLocaleString("id-ID");
 }
 
 // ================== CEKLIS ==================
