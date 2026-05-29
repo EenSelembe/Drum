@@ -61,6 +61,10 @@ th, td {
 
 <div id="adminArea"></div>
 
+<div style="margin:10px 0;">
+  Status DEX: <b id="dexStatusText">ON</b>
+</div>
+
 <button class="copy" onclick="copyData()">Copy</button>
 
 <div class="total-box">
@@ -97,6 +101,9 @@ import {
 // ================== MODE ==================
 const role = "admin"; // ubah ke "user"
 
+// ================== DEX CONTROL ==================
+let dexEnabled = true;
+
 // ================== FIREBASE ==================
 const firebaseConfig = {
   apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
@@ -114,7 +121,14 @@ const db = getFirestore(app);
 if (role === "admin") {
   document.getElementById("adminArea").innerHTML = `
     <button onclick="tambahData()">Tambah</button>
+    <button onclick="toggleDexSystem()">DEX ON/OFF</button>
   `;
+}
+
+// ================== TOGGLE DEX SYSTEM ==================
+window.toggleDexSystem = function() {
+  dexEnabled = !dexEnabled;
+  loadData();
 }
 
 // ================== TAMBAH ==================
@@ -150,12 +164,7 @@ window.loadData = async function() {
   snap.forEach((d) => {
     const data = d.data();
 
-    // ✔ hanya yang sudah CEKLIS
-    if (data.ceklis) {
-      totalCeklisLiter += data.liter;
-    }
-
-    // 🔷 DEX flat
+    if (data.ceklis) totalCeklisLiter += data.liter;
     if (data.dex) totalDex += 50000;
 
     html += `
@@ -165,17 +174,16 @@ window.loadData = async function() {
         <td>
           <input type="checkbox"
             ${data.ceklis ? "checked" : ""}
-            ${role === "admin" ? "disabled" : ""}
             onchange="toggleCeklis('${d.id}', this.checked)">
         </td>
         <td>
           <input type="checkbox"
             ${data.dex ? "checked" : ""}
-            ${role === "admin" ? "disabled" : ""}
+            ${(!dexEnabled) ? "disabled" : ""}
             onchange="toggleDex('${d.id}', this.checked)">
         </td>
         <td>
-          ${role === "admin" ? `<button class="hapus" onclick="hapusData('${d.id}')">Hapus</button>` : ""}
+          <button class="hapus" onclick="hapusData('${d.id}')">Hapus</button>
         </td>
       </tr>
     `;
@@ -183,40 +191,37 @@ window.loadData = async function() {
 
   document.getElementById("tbody").innerHTML = html;
 
-  // ================== RUMUS FINAL ==================
-  let totalSemuaHarga = (totalCeklisLiter * 6800) + totalDex;
+  // STATUS TEXT
+  document.getElementById("dexStatusText").innerText =
+    dexEnabled ? "ON" : "OFF";
+
+  let totalSemua = (totalCeklisLiter * 6800) + totalDex;
 
   document.getElementById("totalSemua").innerText =
-    totalSemuaHarga.toLocaleString("id-ID");
+    totalSemua.toLocaleString("id-ID");
 
-  document.getElementById("totalCeklis").innerText =
-    totalCeklisLiter;
-
+  document.getElementById("totalCeklis").innerText = totalCeklisLiter;
   document.getElementById("totalDex").innerText =
     totalDex.toLocaleString("id-ID");
 }
 
 // ================== CEKLIS ==================
 window.toggleCeklis = async function(id, status) {
-  if (role === "admin") return;
   await updateDoc(doc(db, "drum2", id), { ceklis: status });
   loadData();
 }
 
 // ================== DEX ==================
 window.toggleDex = async function(id, status) {
-  if (role === "admin") return;
+  if (!dexEnabled) return;
   await updateDoc(doc(db, "drum2", id), { dex: status });
   loadData();
 }
 
 // ================== HAPUS ==================
 window.hapusData = async function(id) {
-  if (role !== "admin") return;
-  if (confirm("Hapus data?")) {
-    await deleteDoc(doc(db, "drum2", id));
-    loadData();
-  }
+  await deleteDoc(doc(db, "drum2", id));
+  loadData();
 }
 
 // ================== COPY ==================
