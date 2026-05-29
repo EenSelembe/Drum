@@ -62,7 +62,7 @@ th, td {
 <div id="adminArea"></div>
 
 <div style="margin:10px 0;">
-  Status DEX: <b id="dexStatusText">ON</b>
+  STATUS DEX: <b id="dexStatus">ON</b>
 </div>
 
 <button class="copy" onclick="copyData()">Copy</button>
@@ -99,9 +99,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 // ================== MODE ==================
-const role = "admin"; // ubah ke "user"
+const role = "admin";
 
-// ================== DEX CONTROL ==================
+// ================== DEX LOCK ONLY ==================
 let dexEnabled = true;
 
 // ================== FIREBASE ==================
@@ -117,15 +117,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ================== ADMIN UI ==================
+// ================== ADMIN CONTROL ==================
 if (role === "admin") {
   document.getElementById("adminArea").innerHTML = `
+    <button onclick="toggleDexSystem()">LOCK / UNLOCK DEX</button>
     <button onclick="tambahData()">Tambah</button>
-    <button onclick="toggleDexSystem()">DEX ON/OFF</button>
   `;
 }
 
-// ================== TOGGLE DEX SYSTEM ==================
+// ================== TOGGLE DEX ==================
 window.toggleDexSystem = function() {
   dexEnabled = !dexEnabled;
   loadData();
@@ -133,8 +133,6 @@ window.toggleDexSystem = function() {
 
 // ================== TAMBAH ==================
 window.tambahData = async function() {
-  if (role !== "admin") return;
-
   const nama = document.getElementById("nama").value.toUpperCase();
   const liter = parseFloat(document.getElementById("liter").value);
 
@@ -146,9 +144,6 @@ window.tambahData = async function() {
     ceklis: false,
     dex: false
   });
-
-  document.getElementById("nama").value = "";
-  document.getElementById("liter").value = "";
 
   loadData();
 }
@@ -171,17 +166,22 @@ window.loadData = async function() {
       <tr>
         <td>${data.nama}</td>
         <td>${data.liter}</td>
+
+        <!-- ✔ CEKLIS (NORMAL) -->
         <td>
           <input type="checkbox"
             ${data.ceklis ? "checked" : ""}
             onchange="toggleCeklis('${d.id}', this.checked)">
         </td>
+
+        <!-- 🔷 DEX (LOCKABLE) -->
         <td>
           <input type="checkbox"
             ${data.dex ? "checked" : ""}
             ${(!dexEnabled) ? "disabled" : ""}
             onchange="toggleDex('${d.id}', this.checked)">
         </td>
+
         <td>
           <button class="hapus" onclick="hapusData('${d.id}')">Hapus</button>
         </td>
@@ -191,8 +191,7 @@ window.loadData = async function() {
 
   document.getElementById("tbody").innerHTML = html;
 
-  // STATUS TEXT
-  document.getElementById("dexStatusText").innerText =
+  document.getElementById("dexStatus").innerText =
     dexEnabled ? "ON" : "OFF";
 
   let totalSemua = (totalCeklisLiter * 6800) + totalDex;
@@ -201,6 +200,7 @@ window.loadData = async function() {
     totalSemua.toLocaleString("id-ID");
 
   document.getElementById("totalCeklis").innerText = totalCeklisLiter;
+
   document.getElementById("totalDex").innerText =
     totalDex.toLocaleString("id-ID");
 }
