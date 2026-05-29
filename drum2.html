@@ -51,6 +51,7 @@ th, td {
 .lock-off {
   color: #ff4d4d;
   font-weight: bold;
+  cursor: pointer;
 }
 </style>
 </head>
@@ -62,7 +63,7 @@ th, td {
 <input type="text" id="nama" placeholder="Nama">
 <input type="number" id="liter" placeholder="Liter">
 
-<button class="copy" onclick="copyData()">Copy</button>
+<div class="copy" onclick="copyData()">Copy</div>
 
 <div style="margin:10px 0;">
   Total Semua: <span id="totalSemua">0</span> Rp<br>
@@ -75,7 +76,7 @@ th, td {
 <tr>
 <th>Nama</th>
 <th>Liter</th>
-<th>DEX (klik untuk lock)</th>
+<th>DEX</th>
 <th>✔</th>
 <th>Aksi</th>
 </tr>
@@ -152,18 +153,15 @@ window.loadData = async function() {
         <td>${data.nama}</td>
         <td>${data.liter}</td>
 
-        <!-- DEX per baris -->
-        <td onclick="toggleDexLock('${d.id}', ${data.dexLock})" style="cursor:pointer;">
-          <input type="checkbox"
-            ${data.dex ? "checked" : ""}
-            ${data.dexLock ? "disabled" : ""}
-            onchange="toggleDex('${d.id}', this.checked)">
-          <span class="${lockClass}">(${lockText})</span>
+        <!-- DEX TEXT ONLY (ADMIN CLICK LOCK) -->
+        <td onclick="toggleDexLock('${d.id}', ${data.dexLock})">
+          <span class="${lockClass}">DEX (${lockText})</span>
         </td>
 
-        <!-- CEKLIS -->
+        <!-- ✔ CEKLIS ONLY USER CONTROL -->
         <td>
           <input type="checkbox"
+            ${role === "admin" ? "disabled" : ""}
             ${data.ceklis ? "checked" : ""}
             onchange="toggleCeklis('${d.id}', this.checked)">
         </td>
@@ -188,23 +186,18 @@ window.loadData = async function() {
     totalDex.toLocaleString("id-ID");
 }
 
-// ================== TOGGLE DEX LOCK (PER BARIS) ==================
-window.toggleDexLock = async function(id, currentLock) {
+// ================== LOCK DEX PER BARIS ==================
+window.toggleDexLock = async function(id, current) {
   await updateDoc(doc(db, "drum2", id), {
-    dexLock: !currentLock
+    dexLock: !current
   });
   loadData();
 }
 
-// ================== CEKLIS ==================
+// ================== CEKLIS (BLOCK ADMIN) ==================
 window.toggleCeklis = async function(id, status) {
+  if (role === "admin") return;
   await updateDoc(doc(db, "drum2", id), { ceklis: status });
-  loadData();
-}
-
-// ================== DEX ==================
-window.toggleDex = async function(id, status) {
-  await updateDoc(doc(db, "drum2", id), { dex: status });
   loadData();
 }
 
