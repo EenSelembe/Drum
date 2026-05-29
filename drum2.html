@@ -12,9 +12,7 @@ body {
   padding: 10px;
 }
 
-h2 {
-  text-align: center;
-}
+h2 { text-align: center; }
 
 input {
   padding: 10px;
@@ -22,25 +20,18 @@ input {
   font-size: 16px;
 }
 
-#nama {
-  width: 60%;
-}
-
-#liter {
-  width: 30%;
-}
+#nama { width: 55%; }
+#liter { width: 25%; }
 
 button {
   padding: 10px;
   margin: 5px;
-  font-size: 14px;
   cursor: pointer;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 10px;
 }
 
 th, td {
@@ -49,19 +40,9 @@ th, td {
   text-align: center;
 }
 
-th {
-  background: #222;
-}
+.copy { background: green; color: white; }
+.hapus { background: red; color: white; }
 
-.copy {
-  background: green;
-  color: white;
-}
-
-.hapus {
-  background: red;
-  color: white;
-}
 </style>
 </head>
 
@@ -78,6 +59,7 @@ th {
 <table>
 <thead>
 <tr>
+<th>Ceklis</th>
 <th>Nama</th>
 <th>Liter</th>
 <th>Aksi</th>
@@ -88,7 +70,15 @@ th {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
@@ -102,44 +92,44 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ================= TAMBAH DATA =================
+// ========= TAMBAH =========
 window.tambahData = async function() {
-  const namaInput = document.getElementById("nama");
-  const literInput = document.getElementById("liter");
+  const nama = document.getElementById("nama").value.toUpperCase();
+  const liter = parseFloat(document.getElementById("liter").value);
 
-  const nama = namaInput.value.toUpperCase();
-  const liter = parseFloat(literInput.value);
-
-  if (!nama || !liter) {
-    alert("Isi semua data!");
-    return;
-  }
+  if (!nama || !liter) return alert("Isi semua!");
 
   await addDoc(collection(db, "drum2"), {
     nama,
-    liter
+    liter,
+    ceklis: false
   });
 
-  namaInput.value = "";
-  literInput.value = "";
+  document.getElementById("nama").value = "";
+  document.getElementById("liter").value = "";
 
   loadData();
 }
 
-// ================= LOAD DATA =================
+// ========= LOAD =========
 window.loadData = async function() {
-  const querySnapshot = await getDocs(collection(db, "drum2"));
+  const snap = await getDocs(collection(db, "drum2"));
   let html = "";
 
-  querySnapshot.forEach((docSnap) => {
-    const d = docSnap.data();
+  snap.forEach((d) => {
+    const data = d.data();
 
     html += `
       <tr>
-        <td>${d.nama}</td>
-        <td>${d.liter}</td>
         <td>
-          <button class="hapus" onclick="hapusData('${docSnap.id}')">Hapus</button>
+          <input type="checkbox"
+            ${data.ceklis ? "checked" : ""}
+            onchange="toggleCeklis('${d.id}', this.checked)">
+        </td>
+        <td>${data.nama}</td>
+        <td>${data.liter}</td>
+        <td>
+          <button class="hapus" onclick="hapusData('${d.id}')">Hapus</button>
         </td>
       </tr>
     `;
@@ -148,31 +138,36 @@ window.loadData = async function() {
   document.getElementById("tbody").innerHTML = html;
 }
 
-// ================= HAPUS =================
+// ========= CEKLIS =========
+window.toggleCeklis = async function(id, status) {
+  await updateDoc(doc(db, "drum2", id), {
+    ceklis: status
+  });
+}
+
+// ========= HAPUS =========
 window.hapusData = async function(id) {
-  if(confirm("Hapus data ini?")){
+  if (confirm("Hapus data?")) {
     await deleteDoc(doc(db, "drum2", id));
     loadData();
   }
 }
 
-// ================= COPY =================
+// ========= COPY =========
 window.copyData = async function() {
-  const querySnapshot = await getDocs(collection(db, "drum2"));
+  const snap = await getDocs(collection(db, "drum2"));
   let teks = "";
 
-  querySnapshot.forEach((docSnap) => {
-    const d = docSnap.data();
-    teks += `${d.nama} - ${d.liter}L\n`;
+  snap.forEach((d) => {
+    const data = d.data();
+    teks += `${data.nama} - ${data.liter}L\n`;
   });
 
   navigator.clipboard.writeText(teks);
-  alert("Data berhasil dicopy!");
+  alert("Copied!");
 }
 
-// ================= LOAD AWAL =================
 loadData();
-
 </script>
 
 </body>
