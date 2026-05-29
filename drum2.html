@@ -32,6 +32,12 @@ button {
   cursor: pointer;
 }
 
+.btn-hapus {
+  background: #d50000;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -41,8 +47,6 @@ table {
 
 th {
   background: #2a2a2a;
-  color: #ffffff;
-  font-weight: bold;
 }
 
 th, td {
@@ -51,15 +55,11 @@ th, td {
   text-align: center;
 }
 
-td {
-  color: #e0e0e0;
-}
-
 input[type="text"] {
   width: 95%;
   padding: 6px;
   background: #2a2a2a;
-  color: #ffffff;
+  color: white;
   border: 1px solid #555;
   border-radius: 4px;
   text-transform: uppercase;
@@ -70,15 +70,10 @@ input[type="number"] {
   width: 65px;
   padding: 6px;
   background: #2a2a2a;
-  color: #ffffff;
+  color: white;
   border: 1px solid #555;
   border-radius: 4px;
   text-align: center;
-  font-weight: bold;
-}
-
-th:nth-child(2), td:nth-child(2) {
-  width: 80px;
 }
 
 .dex-off {
@@ -90,15 +85,9 @@ th:nth-child(2), td:nth-child(2) {
   background: #1e1e1e;
   padding: 15px;
   border-radius: 10px;
-  font-size: 16px;
-}
-
-.total-box p {
-  margin: 5px 0;
 }
 
 .total-box b {
-  font-size: 18px;
   color: #00e676;
 }
 </style>
@@ -118,6 +107,7 @@ th:nth-child(2), td:nth-child(2) {
   <th>Ceklis</th>
   <th>Dex</th>
   <th>Total</th>
+  <th>Aksi</th>
 </tr>
 </thead>
 <tbody id="tbody"></tbody>
@@ -152,6 +142,14 @@ function tambahData(){
     dexOff: false
   });
 
+  simpan();
+  render();
+}
+
+function hapusData(index){
+  if(!confirm("Yakin hapus data?")) return;
+
+  data.splice(index,1);
   simpan();
   render();
 }
@@ -262,11 +260,23 @@ function render(){
 
     tdTotal.innerText = "Rp " + total.toLocaleString();
 
+    // AKSI
+    const tdAksi = document.createElement("td");
+
+    if(role === "admin"){
+      const btn = document.createElement("button");
+      btn.innerText = "Hapus";
+      btn.className = "btn-hapus";
+      btn.onclick = ()=>hapusData(i);
+      tdAksi.appendChild(btn);
+    }
+
     tr.appendChild(tdNama);
     tr.appendChild(tdLiter);
     tr.appendChild(tdCeklis);
     tr.appendChild(tdDex);
     tr.appendChild(tdTotal);
+    tr.appendChild(tdAksi);
 
     tbody.appendChild(tr);
   });
