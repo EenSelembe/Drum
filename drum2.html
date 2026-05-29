@@ -34,6 +34,11 @@ th, td {
   text-align: center;
 }
 
+button {
+  padding: 6px;
+  cursor: pointer;
+}
+
 .copy { background: green; color: white; }
 
 .lock-on {
@@ -41,7 +46,6 @@ th, td {
   font-weight: bold;
   cursor: pointer;
 }
-
 .lock-off {
   color: #ff4d4d;
   font-weight: bold;
@@ -57,7 +61,7 @@ th, td {
 <input type="text" id="nama" placeholder="Nama">
 <input type="number" id="liter" placeholder="Liter">
 
-<div onclick="copyData()" class="copy">Copy</div>
+<div class="copy" onclick="copyData()">Copy</div>
 
 <table>
 <thead>
@@ -86,7 +90,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 // ================== MODE ==================
-const role = "admin"; // admin / user
+const role = "admin"; // ubah ke "user"
 
 // ================== FIREBASE ==================
 const firebaseConfig = {
@@ -135,13 +139,13 @@ window.loadData = async function() {
         <td>${data.nama}</td>
         <td>${data.liter}</td>
 
-        <!-- 🔷 DEXLITE (INI YANG KAMU MAU) -->
+        <!-- 🔷 DEXLITE -->
         <td>
           <input type="checkbox"
             ${data.dexlite ? "checked" : ""}
-            ${data.dexLock ? "disabled" : ""}
+            ${role === "admin" ? "disabled" : ""}
             onchange="toggleDexlite('${d.id}', this.checked)">
-          
+
           ${
             role === "admin"
               ? `<span onclick="toggleLock('${d.id}', ${data.dexLock})"
@@ -170,15 +174,18 @@ window.loadData = async function() {
   document.getElementById("tbody").innerHTML = html;
 }
 
-// ================== TOGGLE DEXLITE ==================
+// ================== DEXLITE (USER ONLY) ==================
 window.toggleDexlite = async function(id, status) {
+  if (role === "admin") return; // ❌ FIX UTAMA
+
   await updateDoc(doc(db, "drum2", id), {
     dexlite: status
   });
+
   loadData();
 }
 
-// ================== LOCK DEX PER BARIS (ADMIN) ==================
+// ================== LOCK DEX (ADMIN ONLY) ==================
 window.toggleLock = async function(id, current) {
   if (role !== "admin") return;
 
@@ -189,7 +196,7 @@ window.toggleLock = async function(id, current) {
   loadData();
 }
 
-// ================== CEKLIS ==================
+// ================== CEKLIS (USER ONLY) ==================
 window.toggleCeklis = async function(id, status) {
   if (role === "admin") return;
 
@@ -204,6 +211,20 @@ window.toggleCeklis = async function(id, status) {
 window.hapusData = async function(id) {
   await deleteDoc(doc(db, "drum2", id));
   loadData();
+}
+
+// ================== COPY ==================
+window.copyData = async function() {
+  const snap = await getDocs(collection(db, "drum2"));
+  let teks = "";
+
+  snap.forEach((d) => {
+    const data = d.data();
+    teks += `${data.nama} - ${data.liter}L\n`;
+  });
+
+  navigator.clipboard.writeText(teks);
+  alert("Copied!");
 }
 
 loadData();
