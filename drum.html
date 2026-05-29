@@ -54,7 +54,7 @@ input {
   padding: 2px;
 }
 
-/* 🔥 WARNA MERAH SAAT DEX DIMATIKAN */
+/* 🔴 merah saat ditutup */
 .dex-disabled {
   background: #3a0000 !important;
   border: 1px solid red;
@@ -217,6 +217,12 @@ onSnapshot(q, snapshot => {
       c1.onchange=()=>updateCeklis(id,i*2,c1.checked);
       c2.onchange=()=>updateCeklis(id,i*2+1,c2.checked);
 
+      // 🔥 ADMIN TIDAK BISA CEKLIS
+      if(role==="admin"){
+        c1.disabled = true;
+        c2.disabled = true;
+      }
+
       if(c1.checked) totalCeklis += 0.5;
       if(c2.checked) totalCeklis += 0.5;
 
@@ -227,17 +233,29 @@ onSnapshot(q, snapshot => {
       const dexBox = document.createElement("div");
       dexBox.className="dex-box";
 
-      // 🔥 WARNA MERAH JIKA DIMATIKAN
+      // 🔴 warna merah kalau ditutup
       if(data.dexDisabled){
         dexBox.classList.add("dex-disabled");
+      }
+
+      // 🔥 klik kotak untuk toggle
+      if(role==="admin"){
+        dexBox.style.cursor="pointer";
+        dexBox.title="Klik untuk buka/tutup Dex";
+
+        dexBox.onclick = async ()=>{
+          await updateDoc(doc(db,"drum",id),{
+            dexDisabled: !data.dexDisabled
+          });
+        };
       }
 
       const dexCek=document.createElement("input");
       dexCek.type="checkbox";
       dexCek.checked=!!dex[i]?.cek;
 
-      // 🔥 BLOCK JIKA DISABLED
-      dexCek.disabled = data.dexDisabled;
+      // 🔥 DISABLE FINAL
+      dexCek.disabled = data.dexDisabled || role==="admin";
 
       dexCek.onchange=()=>updateDex(id,i,"cek",dexCek.checked);
 
@@ -255,7 +273,7 @@ onSnapshot(q, snapshot => {
       tr.appendChild(td);
     }
 
-    // 💰 HITUNG UANG FINAL
+    // 💰 HITUNG UANG
     const uangCeklis = totalCeklis * 200 * 6800;
     const uangDex = (totalDex / 50) * 50000;
     const uang = uangCeklis + uangDex;
@@ -266,24 +284,11 @@ onSnapshot(q, snapshot => {
 
     grand += uang;
 
-    // ADMIN BUTTONS
     if(role==="admin"){
-
-      const btnDelete=document.createElement("button");
-      btnDelete.innerText="❌";
-      btnDelete.onclick=()=>deleteDoc(doc(db,"drum",id));
-      tr.appendChild(tdWrap(btnDelete));
-
-      const btnDex=document.createElement("button");
-      btnDex.innerText = data.dexDisabled ? "Aktifkan Dex" : "Nonaktifkan Dex";
-
-      btnDex.onclick = async ()=>{
-        await updateDoc(doc(db,"drum",id),{
-          dexDisabled: !data.dexDisabled
-        });
-      };
-
-      tr.appendChild(tdWrap(btnDex));
+      const btn=document.createElement("button");
+      btn.innerText="❌";
+      btn.onclick=()=>deleteDoc(doc(db,"drum",id));
+      tr.appendChild(tdWrap(btn));
     }
 
     table.appendChild(tr);
