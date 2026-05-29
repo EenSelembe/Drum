@@ -51,6 +51,13 @@ button {
   font-weight: bold;
   cursor: pointer;
 }
+
+.total-box {
+  margin: 10px 0;
+  padding: 10px;
+  background: #222;
+  border: 1px solid #555;
+}
 </style>
 </head>
 
@@ -62,6 +69,13 @@ button {
 <input type="number" id="liter" placeholder="Liter">
 
 <div class="copy" onclick="copyData()">Copy</div>
+
+<!-- 🔥 TOTAL BALIK LAGI -->
+<div class="total-box">
+  Total Semua: <span id="totalSemua">0</span> Rp<br>
+  Total ✔: <span id="totalCeklis">0</span> L<br>
+  Total DEXLITE: <span id="totalDex">0</span> Rp
+</div>
 
 <table>
 <thead>
@@ -90,7 +104,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 // ================== MODE ==================
-const role = "admin"; // ubah ke "user"
+const role = "admin";
 
 // ================== FIREBASE ==================
 const firebaseConfig = {
@@ -123,13 +137,19 @@ window.tambahData = async function() {
   loadData();
 }
 
-// ================== LOAD ==================
+// ================== LOAD + TOTAL ==================
 window.loadData = async function() {
   const snap = await getDocs(collection(db, "drum2"));
   let html = "";
 
+  let totalCeklis = 0;
+  let totalDex = 0;
+
   snap.forEach((d) => {
     const data = d.data();
+
+    if (data.ceklis) totalCeklis += data.liter;
+    if (data.dexlite) totalDex += 50000;
 
     let lockText = data.dexLock ? "LOCK" : "OPEN";
     let lockClass = data.dexLock ? "lock-on" : "lock-off";
@@ -139,7 +159,7 @@ window.loadData = async function() {
         <td>${data.nama}</td>
         <td>${data.liter}</td>
 
-        <!-- 🔷 DEXLITE -->
+        <!-- DEXLITE -->
         <td>
           <input type="checkbox"
             ${data.dexlite ? "checked" : ""}
@@ -156,7 +176,7 @@ window.loadData = async function() {
           }
         </td>
 
-        <!-- ✔ CEKLIS -->
+        <!-- CEKLIS -->
         <td>
           <input type="checkbox"
             ${data.ceklis ? "checked" : ""}
@@ -172,11 +192,23 @@ window.loadData = async function() {
   });
 
   document.getElementById("tbody").innerHTML = html;
+
+  // 🔥 HITUNG TOTAL
+  let totalSemua = (totalCeklis * 6800) + totalDex;
+
+  document.getElementById("totalSemua").innerText =
+    totalSemua.toLocaleString("id-ID");
+
+  document.getElementById("totalCeklis").innerText =
+    totalCeklis;
+
+  document.getElementById("totalDex").innerText =
+    totalDex.toLocaleString("id-ID");
 }
 
-// ================== DEXLITE (USER ONLY) ==================
+// ================== DEXLITE ==================
 window.toggleDexlite = async function(id, status) {
-  if (role === "admin") return; // ❌ FIX UTAMA
+  if (role === "admin") return;
 
   await updateDoc(doc(db, "drum2", id), {
     dexlite: status
@@ -185,7 +217,7 @@ window.toggleDexlite = async function(id, status) {
   loadData();
 }
 
-// ================== LOCK DEX (ADMIN ONLY) ==================
+// ================== LOCK DEX ==================
 window.toggleLock = async function(id, current) {
   if (role !== "admin") return;
 
@@ -196,7 +228,7 @@ window.toggleLock = async function(id, current) {
   loadData();
 }
 
-// ================== CEKLIS (USER ONLY) ==================
+// ================== CEKLIS ==================
 window.toggleCeklis = async function(id, status) {
   if (role === "admin") return;
 
