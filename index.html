@@ -13,6 +13,7 @@ body {
   height: 100vh;
   justify-content: center;
   align-items: center;
+  margin: 0;
 }
 
 .login-box {
@@ -41,6 +42,9 @@ button {
   cursor: pointer;
 }
 
+button:hover {
+  opacity: 0.9;
+}
 </style>
 </head>
 
@@ -65,13 +69,13 @@ function login(){
   // ADMIN
   if(user === "admin" && pass === "admin123"){
     localStorage.setItem("role","admin");
-    location.href = "drum.html";
+    location.href = "menu.html";
   }
 
   // OPERATOR (USER)
   else if(user === "operator" && pass === "6478807"){
     localStorage.setItem("role","user");
-    location.href = "drum.html";
+    location.href = "menu.html";
   }
 
   else{
