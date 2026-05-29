@@ -2,93 +2,64 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Drum 2</title>
+<title>DRUM 2</title>
 
 <style>
 body {
-  font-family: Arial, sans-serif;
+  font-family: Arial;
   background: #121212;
-  color: #ffffff;
+  color: white;
   padding: 20px;
-  font-size: 16px;
 }
 
 h2 {
   text-align: center;
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 15px;
 }
 
 button {
-  padding: 10px 14px;
-  margin-bottom: 12px;
-  border: none;
-  border-radius: 6px;
-  background: #00c853;
+  padding: 8px 12px;
+  background: green;
   color: white;
-  font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  margin-bottom: 10px;
 }
 
 .btn-hapus {
-  background: #d50000;
-  padding: 5px 8px;
-  font-size: 12px;
+  background: red;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
   background: #1e1e1e;
-  font-size: 15px;
-}
-
-th {
-  background: #2a2a2a;
 }
 
 th, td {
   border: 1px solid #444;
-  padding: 10px;
+  padding: 8px;
   text-align: center;
 }
 
 input[type="text"] {
   width: 95%;
-  padding: 6px;
-  background: #2a2a2a;
-  color: white;
-  border: 1px solid #555;
-  border-radius: 4px;
+  padding: 5px;
   text-transform: uppercase;
-  font-weight: bold;
 }
 
 input[type="number"] {
-  width: 65px;
-  padding: 6px;
-  background: #2a2a2a;
-  color: white;
-  border: 1px solid #555;
-  border-radius: 4px;
+  width: 70px;
   text-align: center;
 }
 
 .dex-off {
-  background: #8b0000 !important;
+  background: #8b0000;
 }
 
 .total-box {
   margin-top: 20px;
   background: #1e1e1e;
-  padding: 15px;
-  border-radius: 10px;
-}
-
-.total-box b {
-  color: #00e676;
+  padding: 10px;
 }
 </style>
 </head>
@@ -116,23 +87,17 @@ input[type="number"] {
 <div class="total-box">
   <p>Total Liter: <span id="totalLiter">0</span></p>
   <p>Total Dex: <span id="totalDex">0</span></p>
-  <p>Total Uang Liter: Rp <span id="totalUang">0</span></p>
+  <p>Total Uang: Rp <span id="totalUang">0</span></p>
   <p><b>Total Keseluruhan: Rp <span id="grandTotal">0</span></b></p>
 </div>
 
 <script>
-let data = JSON.parse(localStorage.getItem("drum2")) || [];
+let data = [];
 const role = localStorage.getItem("role");
 
-function simpan(){
-  localStorage.setItem("drum2", JSON.stringify(data));
-}
-
+// TAMBAH
 function tambahData(){
-  if(role !== "admin"){
-    alert("Hanya admin!");
-    return;
-  }
+  if(role !== "admin") return alert("Hanya admin");
 
   data.push({
     nama: "",
@@ -142,27 +107,24 @@ function tambahData(){
     dexOff: false
   });
 
-  simpan();
-  render();
+  simpanFirebase(data);
 }
 
-function hapusData(index){
-  if(!confirm("Yakin hapus data?")) return;
-
-  data.splice(index,1);
-  simpan();
-  render();
+// HAPUS
+function hapusData(i){
+  if(!confirm("Hapus data?")) return;
+  data.splice(i,1);
+  simpanFirebase(data);
 }
 
+// RENDER
 function render(){
   const tbody = document.getElementById("tbody");
   tbody.innerHTML = "";
 
-  let totalLiter = 0;
-  let totalDex = 0;
-  let totalUang = 0;
+  let totalLiter=0, totalDex=0, totalUang=0;
 
-  data.forEach((item, i)=>{
+  data.forEach((item,i)=>{
     const tr = document.createElement("tr");
 
     // NAMA
@@ -170,11 +132,11 @@ function render(){
     const inputNama = document.createElement("input");
     inputNama.value = item.nama;
 
-    inputNama.oninput = e => {
+    inputNama.oninput = e=>{
       const val = e.target.value.toUpperCase();
       e.target.value = val;
       item.nama = val;
-      simpan();
+      simpanFirebase(data);
     };
 
     tdNama.appendChild(inputNama);
@@ -186,94 +148,80 @@ function render(){
     inputLiter.value = item.liter;
 
     inputLiter.oninput = e=>{
-      item.liter = parseFloat(e.target.value) || 0;
-      simpan();
-    };
-
-    inputLiter.onchange = ()=>{
-      render();
+      item.liter = parseFloat(e.target.value)||0;
+      simpanFirebase(data);
     };
 
     tdLiter.appendChild(inputLiter);
 
     // CEKLIS
-    const tdCeklis = document.createElement("td");
-    const ceklis = document.createElement("input");
-    ceklis.type = "checkbox";
-    ceklis.checked = item.ceklis;
+    const tdCek = document.createElement("td");
+    const cek = document.createElement("input");
+    cek.type="checkbox";
+    cek.checked=item.ceklis;
+    cek.disabled = (role==="admin");
 
-    ceklis.disabled = (role === "admin");
-
-    ceklis.onchange = ()=>{
-      item.ceklis = ceklis.checked;
-      simpan();
-      render();
+    cek.onchange=()=>{
+      item.ceklis=cek.checked;
+      simpanFirebase(data);
     };
 
-    tdCeklis.appendChild(ceklis);
+    tdCek.appendChild(cek);
 
     // DEX
-    const tdDex = document.createElement("td");
-    const dex = document.createElement("input");
-    dex.type = "checkbox";
-    dex.checked = item.dex;
+    const tdDex=document.createElement("td");
+    const dex=document.createElement("input");
+    dex.type="checkbox";
+    dex.checked=item.dex;
+    dex.disabled = (role==="admin")||item.dexOff;
 
-    dex.disabled = (role === "admin") || item.dexOff;
+    if(item.dexOff) tdDex.classList.add("dex-off");
 
-    if(item.dexOff){
-      tdDex.classList.add("dex-off");
-    }
-
-    tdDex.onclick = ()=>{
-      if(role !== "admin") return;
-
-      item.dexOff = !item.dexOff;
-      if(item.dexOff) item.dex = false;
-
-      simpan();
-      render();
+    tdDex.onclick=()=>{
+      if(role!=="admin") return;
+      item.dexOff=!item.dexOff;
+      if(item.dexOff) item.dex=false;
+      simpanFirebase(data);
     };
 
-    dex.onchange = ()=>{
-      item.dex = dex.checked;
-      simpan();
-      render();
+    dex.onchange=()=>{
+      item.dex=dex.checked;
+      simpanFirebase(data);
     };
 
     tdDex.appendChild(dex);
 
     // TOTAL
-    const tdTotal = document.createElement("td");
-
-    let total = 0;
+    const tdTotal=document.createElement("td");
+    let total=0;
 
     if(item.ceklis){
-      total += item.liter * 6800;
-      totalLiter += item.liter;
-      totalUang += item.liter * 6800;
+      total+=item.liter*6800;
+      totalLiter+=item.liter;
+      totalUang+=item.liter*6800;
     }
 
     if(item.dex){
-      total += 50000;
-      totalDex += 50000;
+      total+=50000;
+      totalDex+=50000;
     }
 
-    tdTotal.innerText = "Rp " + total.toLocaleString();
+    tdTotal.innerText="Rp "+total.toLocaleString();
 
     // AKSI
-    const tdAksi = document.createElement("td");
+    const tdAksi=document.createElement("td");
 
-    if(role === "admin"){
-      const btn = document.createElement("button");
-      btn.innerText = "Hapus";
-      btn.className = "btn-hapus";
-      btn.onclick = ()=>hapusData(i);
+    if(role==="admin"){
+      const btn=document.createElement("button");
+      btn.innerText="Hapus";
+      btn.className="btn-hapus";
+      btn.onclick=()=>hapusData(i);
       tdAksi.appendChild(btn);
     }
 
     tr.appendChild(tdNama);
     tr.appendChild(tdLiter);
-    tr.appendChild(tdCeklis);
+    tr.appendChild(tdCek);
     tr.appendChild(tdDex);
     tr.appendChild(tdTotal);
     tr.appendChild(tdAksi);
@@ -281,13 +229,48 @@ function render(){
     tbody.appendChild(tr);
   });
 
-  document.getElementById("totalLiter").innerText = totalLiter;
-  document.getElementById("totalDex").innerText = totalDex.toLocaleString();
-  document.getElementById("totalUang").innerText = totalUang.toLocaleString();
-  document.getElementById("grandTotal").innerText = (totalUang + totalDex).toLocaleString();
+  document.getElementById("totalLiter").innerText=totalLiter;
+  document.getElementById("totalDex").innerText=totalDex.toLocaleString();
+  document.getElementById("totalUang").innerText=totalUang.toLocaleString();
+  document.getElementById("grandTotal").innerText=(totalUang+totalDex).toLocaleString();
+}
+</script>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
+  authDomain: "drum-26d1c.firebaseapp.com",
+  projectId: "drum-26d1c",
+  storageBucket: "drum-26d1c.firebasestorage.app",
+  messagingSenderId: "960892789351",
+  appId: "1:960892789351:web:ca1c653c85cab59586eac2",
+  measurementId: "G-Z85SMGMZT7"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// SIMPAN
+window.simpanFirebase = function(data){
+  set(ref(db,"drum2"), data);
 }
 
-render();
+// LOAD REALTIME
+window.loadFirebase = function(callback){
+  onValue(ref(db,"drum2"), snap=>{
+    callback(snap.val() || []);
+  });
+}
+
+// JALANKAN
+loadFirebase((val)=>{
+  data = val;
+  render();
+});
 </script>
 
 </body>
