@@ -60,13 +60,15 @@ th, td {
 <input type="text" id="nama" placeholder="Nama">
 <input type="number" id="liter" placeholder="Liter">
 
-<button onclick="tambahData()">Tambah</button>
+<!-- tombol hanya untuk ADMIN -->
+<div id="adminArea"></div>
+
 <button class="copy" onclick="copyData()">Copy</button>
 
 <div class="total-box">
-  <b>Total Semua:</b> <span id="totalSemua">0</span> L<br>
-  <b>Total ✔:</b> <span id="totalCeklis">0</span> L<br>
-  <b>Total DEX:</b> <span id="totalDex">0</span> L
+  Total Semua: <span id="totalSemua">0</span> L<br>
+  Total ✔: <span id="totalCeklis">0</span> L<br>
+  Total DEX: <span id="totalDex">0</span> L
 </div>
 
 <table>
@@ -94,6 +96,10 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
+// ================== MODE ==================
+const role = "admin"; // ganti "user"
+
+// ================== FIREBASE ==================
 const firebaseConfig = {
   apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
   authDomain: "drum-26d1c.firebaseapp.com",
@@ -106,8 +112,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// TAMBAH
+// ================== ADMIN UI ==================
+if (role === "admin") {
+  document.getElementById("adminArea").innerHTML = `
+    <button onclick="tambahData()">Tambah</button>
+  `;
+}
+
+// ================== TAMBAH ==================
 window.tambahData = async function() {
+  if (role !== "admin") return;
+
   const nama = document.getElementById("nama").value.toUpperCase();
   const liter = parseFloat(document.getElementById("liter").value);
 
@@ -126,7 +141,7 @@ window.tambahData = async function() {
   loadData();
 }
 
-// LOAD + HITUNG TOTAL
+// ================== LOAD ==================
 window.loadData = async function() {
   const snap = await getDocs(collection(db, "drum2"));
   let html = "";
@@ -139,7 +154,6 @@ window.loadData = async function() {
     const data = d.data();
 
     totalSemua += data.liter;
-
     if (data.ceklis) totalCeklis += data.liter;
     if (data.dex) totalDex += data.liter;
 
@@ -150,15 +164,17 @@ window.loadData = async function() {
         <td>
           <input type="checkbox"
             ${data.ceklis ? "checked" : ""}
+            ${role === "admin" ? "disabled" : ""}
             onchange="toggleCeklis('${d.id}', this.checked)">
         </td>
         <td>
           <input type="checkbox"
             ${data.dex ? "checked" : ""}
+            ${role === "admin" ? "disabled" : ""}
             onchange="toggleDex('${d.id}', this.checked)">
         </td>
         <td>
-          <button class="hapus" onclick="hapusData('${d.id}')">Hapus</button>
+          ${role === "admin" ? `<button class="hapus" onclick="hapusData('${d.id}')">Hapus</button>` : ""}
         </td>
       </tr>
     `;
@@ -171,27 +187,30 @@ window.loadData = async function() {
   document.getElementById("totalDex").innerText = totalDex;
 }
 
-// CEKLIS
+// ================== CEKLIS ==================
 window.toggleCeklis = async function(id, status) {
+  if (role === "admin") return;
   await updateDoc(doc(db, "drum2", id), { ceklis: status });
   loadData();
 }
 
-// DEX
+// ================== DEX ==================
 window.toggleDex = async function(id, status) {
+  if (role === "admin") return;
   await updateDoc(doc(db, "drum2", id), { dex: status });
   loadData();
 }
 
-// HAPUS
+// ================== HAPUS ==================
 window.hapusData = async function(id) {
+  if (role !== "admin") return;
   if (confirm("Hapus data?")) {
     await deleteDoc(doc(db, "drum2", id));
     loadData();
   }
 }
 
-// COPY
+// ================== COPY ==================
 window.copyData = async function() {
   const snap = await getDocs(collection(db, "drum2"));
   let teks = "";
