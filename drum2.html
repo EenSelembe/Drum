@@ -95,7 +95,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 // ================== MODE ==================
-const role = "admin"; // ubah ke "user"
+const role = "admin"; // ubah jadi "user" kalau user
 
 // ================== FIREBASE ==================
 const firebaseConfig = {
@@ -154,8 +154,8 @@ window.loadData = async function() {
     totalSemua += data.liter;
     if (data.ceklis) totalCeklis += data.liter;
 
-    // ✅ FIX DEX: 50.000 per liter
-    if (data.dex) totalDex += data.liter * 50000;
+    // ✅ DEX FIX: 1 klik = 50.000 (flat)
+    if (data.dex) totalDex += 50000;
 
     html += `
       <tr>
