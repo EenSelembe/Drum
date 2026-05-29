@@ -150,9 +150,13 @@ function render(){
     inputLiter.type = "number";
     inputLiter.value = item.liter;
 
+    // 🔥 FIX DISINI
     inputLiter.oninput = e=>{
       item.liter = parseFloat(e.target.value) || 0;
       simpan();
+    };
+
+    inputLiter.onchange = ()=>{
       render();
     };
 
