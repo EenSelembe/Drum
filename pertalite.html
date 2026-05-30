@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Data Pertalite</title>
+
+<style>
+body{
+  font-family:Arial;
+  background:#111;
+  color:#fff;
+  padding:15px;
+}
+
+h2{text-align:center;}
+
+input,button{
+  padding:8px;
+  margin:3px 0;
+  width:100%;
+  font-size:14px;
+}
+
+button{
+  background:green;
+  color:white;
+  border:none;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:15px;
+}
+
+th,td{
+  border:1px solid #444;
+  padding:6px;
+  text-align:center;
+}
+
+.small{
+  width:55px;
+}
+
+.del{
+  background:red;
+  color:white;
+  border:none;
+  width:30px;
+  cursor:pointer;
+  margin-left:3px;
+}
+
+.red{
+  background:red;
+  color:white;
+  font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<h2>DATA PERTALITE</h2>
+
+<h3>Tambah Data</h3>
+<input type="text" id="nama" placeholder="Nama">
+<input type="number" id="stok" placeholder="Stock Awal">
+<button onclick="tambah()">TAMBAH</button>
+
+<hr>
+
+<table>
+<thead>
+<tr>
+<th>No</th>
+<th>Nama</th>
+<th>Stock</th>
+<th>Update</th>
+<th>Transaksi</th>
+</tr>
+</thead>
+
+<tbody id="tabel"></tbody>
+</table>
+
+<script>
+let data = JSON.parse(localStorage.getItem("pertalite_delete")) || [];
+
+function simpan(){
+  localStorage.setItem("pertalite_delete", JSON.stringify(data));
+}
+
+function render(){
+  let t = document.getElementById("tabel");
+  t.innerHTML = "";
+
+  data.forEach((d,i)=>{
+
+    if(!d.transaksi){
+      d.transaksi = [];
+    }
+
+    let kolom = "";
+
+    // transaksi lama + tombol hapus
+    d.transaksi.forEach((v,j)=>{
+      kolom += `
+        <div>
+          <input class="small" type="number"
+            value="${v}"
+            onblur="edit(${i},${j},this)">
+
+          <button class="del" onclick="hapus(${i},${j})">-</button>
+        </div>
+      `;
+    });
+
+    // input baru hanya jika update masih ada
+    if(d.update > 0){
+      kolom += `
+        <input class="small" type="number"
+          placeholder="+"
+          onblur="tambahTransaksi(${i},this)">
+      `;
+    }
+
+    let updateClass = d.update == 0 ? "red" : "";
+
+    t.innerHTML += `
+      <tr>
+        <td>${i+1}</td>
+        <td>${d.nama}</td>
+        <td>${d.stock}</td>
+        <td class="${updateClass}">${d.update}</td>
+        <td>${kolom}</td>
+      </tr>
+    `;
+  });
+
+  simpan();
+}
+
+function tambah(){
+  let nama = document.getElementById("nama").value;
+  let stok = parseFloat(document.getElementById("stok").value);
+
+  if(nama && !isNaN(stok)){
+    data.push({
+      nama:nama,
+      stock:stok,
+      update:stok,
+      transaksi:[]
+    });
+
+    document.getElementById("nama").value = "";
+    document.getElementById("stok").value = "";
+
+    render();
+  }
+}
+
+// tambah transaksi
+function tambahTransaksi(i,input){
+  let val = parseFloat(input.value);
+
+  if(isNaN(val) || val <= 0) return;
+  if(data[i].update <= 0) return;
+
+  data[i].update -= val;
+  if(data[i].update < 0) data[i].update = 0;
+
+  data[i].transaksi.push(val);
+
+  render();
+}
+
+// edit transaksi
+function edit(i,j,input){
+  let val = parseFloat(input.value);
+
+  if(isNaN(val)) return;
+
+  let old = data[i].transaksi[j] || 0;
+  let selisih = val - old;
+
+  data[i].update -= selisih;
+
+  if(data[i].update < 0){
+    data[i].update = 0;
+  }
+
+  data[i].transaksi[j] = val;
+
+  render();
+}
+
+// 🔥 HAPUS KOLOM TRANSAKSI
+function hapus(i,j){
+  let val = data[i].transaksi[j];
+
+  // kembalikan ke update
+  data[i].update += val;
+
+  data[i].transaksi.splice(j,1);
+
+  render();
+}
+
+render();
+</script>
+
+</body>
+</html>
