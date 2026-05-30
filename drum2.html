@@ -61,7 +61,7 @@ th, td {
   border: 1px solid #555;
 }
 
-/* 🔵 CEKLIS JELAS + BESAR */
+/* 🔵 CEKLIS JELAS */
 input[type="checkbox"] {
   width: 22px;
   height: 22px;
@@ -70,10 +70,8 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 
-/* efek kalau sudah dicentang */
 input[type="checkbox"]:checked {
-  background-color: #007bff;
-  box-shadow: 0 0 9px #FFD700;
+  box-shadow: 0 0 9px #ffd700;
 }
 </style>
 </head>
@@ -121,9 +119,10 @@ import {
   deleteDoc,
   doc,
   updateDoc,
-  getDoc
+  getDoc,
+  query,
+  orderBy
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-
 
 // ================== ROLE ==================
 const role = localStorage.getItem("role") || "user";
@@ -146,7 +145,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ================== TAMBAH ==================
+// ================== TAMBAH DATA ==================
 window.tambahData = async function() {
   if(role !== "admin") return;
 
@@ -160,15 +159,22 @@ window.tambahData = async function() {
     liter,
     ceklis: false,
     dexlite: false,
-    dexLock: false
+    dexLock: false,
+    createdAt: Date.now()
   });
 
   loadData();
 }
 
-// ================== LOAD ==================
+// ================== LOAD DATA (URUT RAPI FIX) ==================
 window.loadData = async function() {
-  const snap = await getDocs(collection(db, "drum2"));
+
+  const q = query(
+    collection(db, "drum2"),
+    orderBy("createdAt", "asc")
+  );
+
+  const snap = await getDocs(q);
 
   let html = "";
   let totalCeklis = 0;
