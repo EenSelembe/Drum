@@ -49,14 +49,24 @@ th,td{
 }
 
 .small{
-  width:55px;
+  width:60px;
+}
+
+/* 🔥 FLEX UNTUK INPUT + TOMBOL */
+.row{
+  display:flex;
+  gap:5px;
+  align-items:center;
+  margin-bottom:3px;
 }
 
 .del{
-  background:none;
+  background:red;
+  color:white;
   border:none;
+  width:30px;
   cursor:pointer;
-  font-size:18px;
+  font-weight:bold;
 }
 
 .red{
@@ -71,7 +81,6 @@ th,td{
 
 <h2>DATA PERTALITE</h2>
 
-<!-- 🔥 TOTAL BERDASARKAN PEMAKAIAN -->
 <div class="total-box" id="totalInfo">
 Total Terpakai: 0 LITER<br>
 Total Uang: Rp 0
@@ -100,26 +109,22 @@ Total Uang: Rp 0
 </table>
 
 <script>
-let data = JSON.parse(localStorage.getItem("pertalite_usage")) || [];
+let data = JSON.parse(localStorage.getItem("pertalite_inline")) || [];
 
 function simpan(){
-  localStorage.setItem("pertalite_usage", JSON.stringify(data));
+  localStorage.setItem("pertalite_inline", JSON.stringify(data));
 }
 
-// 🔥 HITUNG BERDASARKAN PEMAKAIAN
 function hitungTotal(){
-  let totalTerpakai = 0;
+  let total = 0;
 
   data.forEach(d=>{
-    let pakai = (d.stock || 0) - (d.update || 0);
-    totalTerpakai += pakai;
+    total += (d.stock - d.update);
   });
 
-  let totalUang = totalTerpakai * 10000;
-
   document.getElementById("totalInfo").innerHTML =
-    "Total Terpakai: " + totalTerpakai + " LITER<br>" +
-    "Total Uang: Rp " + totalUang.toLocaleString("id-ID");
+    "Total Terpakai: " + total + " LITER<br>" +
+    "Total Uang: Rp " + (total * 10000).toLocaleString("id-ID");
 }
 
 function render(){
@@ -136,7 +141,7 @@ function render(){
 
     d.transaksi.forEach((v,j)=>{
       kolom += `
-        <div>
+        <div class="row">
           <input class="small" type="number"
             value="${v}"
             onblur="edit(${i},${j},this)">
