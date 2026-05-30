@@ -44,12 +44,13 @@ th,td{
 }
 
 .del{
-  background:red;
-  color:white;
+  background:none;
   border:none;
-  width:30px;
   cursor:pointer;
-  margin-left:3px;
+  font-size:18px;
+}
+.del:hover{
+  transform:scale(1.2);
 }
 
 .red{
@@ -79,6 +80,7 @@ th,td{
 <th>Stock</th>
 <th>Update</th>
 <th>Transaksi</th>
+<th>Aksi</th>
 </tr>
 </thead>
 
@@ -86,10 +88,10 @@ th,td{
 </table>
 
 <script>
-let data = JSON.parse(localStorage.getItem("pertalite_delete")) || [];
+let data = JSON.parse(localStorage.getItem("pertalite_trash")) || [];
 
 function simpan(){
-  localStorage.setItem("pertalite_delete", JSON.stringify(data));
+  localStorage.setItem("pertalite_trash", JSON.stringify(data));
 }
 
 function render(){
@@ -104,20 +106,17 @@ function render(){
 
     let kolom = "";
 
-    // transaksi lama + tombol hapus
     d.transaksi.forEach((v,j)=>{
       kolom += `
         <div>
           <input class="small" type="number"
             value="${v}"
             onblur="edit(${i},${j},this)">
-
-          <button class="del" onclick="hapus(${i},${j})">-</button>
+          <button class="del" onclick="hapusTransaksi(${i},${j})">🗑️</button>
         </div>
       `;
     });
 
-    // input baru hanya jika update masih ada
     if(d.update > 0){
       kolom += `
         <input class="small" type="number"
@@ -135,6 +134,11 @@ function render(){
         <td>${d.stock}</td>
         <td class="${updateClass}">${d.update}</td>
         <td>${kolom}</td>
+
+        <!-- 🔥 ICON HAPUS DATA -->
+        <td>
+          <button class="del" onclick="hapusData(${i})">🗑️</button>
+        </td>
       </tr>
     `;
   });
@@ -161,7 +165,6 @@ function tambah(){
   }
 }
 
-// tambah transaksi
 function tambahTransaksi(i,input){
   let val = parseFloat(input.value);
 
@@ -169,14 +172,16 @@ function tambahTransaksi(i,input){
   if(data[i].update <= 0) return;
 
   data[i].update -= val;
-  if(data[i].update < 0) data[i].update = 0;
+
+  if(data[i].update < 0){
+    data[i].update = 0;
+  }
 
   data[i].transaksi.push(val);
 
   render();
 }
 
-// edit transaksi
 function edit(i,j,input){
   let val = parseFloat(input.value);
 
@@ -196,16 +201,22 @@ function edit(i,j,input){
   render();
 }
 
-// 🔥 HAPUS KOLOM TRANSAKSI
-function hapus(i,j){
+function hapusTransaksi(i,j){
   let val = data[i].transaksi[j];
 
-  // kembalikan ke update
   data[i].update += val;
 
   data[i].transaksi.splice(j,1);
 
   render();
+}
+
+// 🔥 HAPUS DATA BARIS
+function hapusData(i){
+  if(confirm("Hapus data ini?")){
+    data.splice(i,1);
+    render();
+  }
 }
 
 render();
