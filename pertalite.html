@@ -14,6 +14,15 @@ body{
 
 h2{text-align:center;}
 
+.total-box{
+  background:#222;
+  padding:10px;
+  margin-bottom:10px;
+  text-align:center;
+  font-size:16px;
+  border:1px solid #444;
+}
+
 input,button{
   padding:8px;
   margin:3px 0;
@@ -49,9 +58,6 @@ th,td{
   cursor:pointer;
   font-size:18px;
 }
-.del:hover{
-  transform:scale(1.2);
-}
 
 .red{
   background:red;
@@ -64,6 +70,12 @@ th,td{
 <body>
 
 <h2>DATA PERTALITE</h2>
+
+<!-- 🔥 TOTAL BERDASARKAN PEMAKAIAN -->
+<div class="total-box" id="totalInfo">
+Total Terpakai: 0 LITER<br>
+Total Uang: Rp 0
+</div>
 
 <h3>Tambah Data</h3>
 <input type="text" id="nama" placeholder="Nama">
@@ -88,10 +100,26 @@ th,td{
 </table>
 
 <script>
-let data = JSON.parse(localStorage.getItem("pertalite_trash")) || [];
+let data = JSON.parse(localStorage.getItem("pertalite_usage")) || [];
 
 function simpan(){
-  localStorage.setItem("pertalite_trash", JSON.stringify(data));
+  localStorage.setItem("pertalite_usage", JSON.stringify(data));
+}
+
+// 🔥 HITUNG BERDASARKAN PEMAKAIAN
+function hitungTotal(){
+  let totalTerpakai = 0;
+
+  data.forEach(d=>{
+    let pakai = (d.stock || 0) - (d.update || 0);
+    totalTerpakai += pakai;
+  });
+
+  let totalUang = totalTerpakai * 10000;
+
+  document.getElementById("totalInfo").innerHTML =
+    "Total Terpakai: " + totalTerpakai + " LITER<br>" +
+    "Total Uang: Rp " + totalUang.toLocaleString("id-ID");
 }
 
 function render(){
@@ -134,8 +162,6 @@ function render(){
         <td>${d.stock}</td>
         <td class="${updateClass}">${d.update}</td>
         <td>${kolom}</td>
-
-        <!-- 🔥 ICON HAPUS DATA -->
         <td>
           <button class="del" onclick="hapusData(${i})">🗑️</button>
         </td>
@@ -144,6 +170,7 @@ function render(){
   });
 
   simpan();
+  hitungTotal();
 }
 
 function tambah(){
@@ -172,10 +199,7 @@ function tambahTransaksi(i,input){
   if(data[i].update <= 0) return;
 
   data[i].update -= val;
-
-  if(data[i].update < 0){
-    data[i].update = 0;
-  }
+  if(data[i].update < 0) data[i].update = 0;
 
   data[i].transaksi.push(val);
 
@@ -211,7 +235,6 @@ function hapusTransaksi(i,j){
   render();
 }
 
-// 🔥 HAPUS DATA BARIS
 function hapusData(i){
   if(confirm("Hapus data ini?")){
     data.splice(i,1);
