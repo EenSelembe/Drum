@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>PERTALITE ONLINE</title>
+<title>PERTALITE ONLINE FIX</title>
 
 <style>
 body{
@@ -34,7 +34,6 @@ button{
   background:green;
   color:white;
   border:none;
-  cursor:pointer;
 }
 
 table{
@@ -72,12 +71,21 @@ th,td{
   color:white;
   font-weight:bold;
 }
+
+#roleBox{
+  text-align:center;
+  background:#222;
+  padding:5px;
+  margin-bottom:10px;
+}
 </style>
 </head>
 
 <body>
 
 <h2>DATA PERTALITE (ONLINE)</h2>
+
+<div id="roleBox">ROLE: <span id="roleText"></span></div>
 
 <div class="total-box" id="totalInfo">Loading...</div>
 
@@ -119,13 +127,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🔥 ROLE LOGIN
-const role = sessionStorage.getItem("role");
+// 🔥 ROLE FIX (ANTI BUG LOGIN)
+let role = sessionStorage.getItem("role");
 
-if(!role){
-  alert("Login dulu");
+console.log("ROLE:", role);
+
+// fallback safety
+if(!role || role === "null"){
+  alert("Silakan login dulu");
   window.location.href = "index.html";
 }
+
+// tampil role
+document.getElementById("roleText").innerText = role.toUpperCase();
 
 // 🔥 ADMIN FORM
 if(role === "admin"){
@@ -144,7 +158,7 @@ onValue(ref(db,"pertalite"), snap=>{
   render();
 });
 
-// 🔥 HITUNG TOTAL
+// 🔥 TOTAL
 function hitungTotal(){
   let total = 0;
 
@@ -157,7 +171,7 @@ function hitungTotal(){
     "Total Uang: Rp " + (total * 10000).toLocaleString("id-ID");
 }
 
-// 🔥 RENDER TABLE
+// 🔥 RENDER
 function render(){
   let t = document.getElementById("tabel");
   t.innerHTML = "";
@@ -170,7 +184,6 @@ function render(){
 
     let kolom = "";
 
-    // 🔥 tampil transaksi
     d.transaksi.forEach((v,j)=>{
 
       kolom += `
@@ -187,7 +200,6 @@ function render(){
       `;
     });
 
-    // 🔥 input transaksi (USER ONLY)
     if(role === "user" && d.update > 0){
       kolom += `
         <input class="small"
@@ -240,7 +252,7 @@ window.tambah = function(){
   document.getElementById("stok").value = "";
 };
 
-// 🔥 TAMBAH TRANSAKSI (USER)
+// 🔥 TRANSAKSI (USER)
 window.tambahTransaksi = function(key,input){
   let val = parseFloat(input.value);
   if(isNaN(val)) return;
@@ -253,9 +265,11 @@ window.tambahTransaksi = function(key,input){
   d.transaksi.push(val);
 
   set(ref(db,"pertalite/"+key), d);
+
+  input.value = "";
 };
 
-// 🔥 EDIT TRANSAKSI (USER)
+// 🔥 EDIT (USER)
 window.edit = function(key,j,input){
   let val = parseFloat(input.value);
   if(isNaN(val)) return;
