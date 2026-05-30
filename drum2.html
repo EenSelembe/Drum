@@ -54,7 +54,7 @@ th, td {
   cursor: pointer;
 }
 
-/* 🔥 WARNA KOLOM CEKLIS */
+/* 🔥 WARNA HANYA KOLOM CEKLIS */
 .dex-checked {
   background: #00ff99;
   color: black;
@@ -157,12 +157,17 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
+/* 🔐 ROLE */
 const role = localStorage.getItem("role") || "user";
 
+/* 🔥 CONFIG ASLI (JANGAN DIUBAH!) */
 const firebaseConfig = {
-  apiKey: "xxx",
-  authDomain: "xxx",
-  projectId: "xxx"
+  apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
+  authDomain: "drum-26d1c.firebaseapp.com",
+  projectId: "drum-26d1c",
+  storageBucket: "drum-26d1c.appspot.com",
+  messagingSenderId: "960892789351",
+  appId: "1:960892789351:web:ca1c653c85cab59586eac2"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -175,6 +180,8 @@ window.tambahData = async function() {
 
   const nama = document.getElementById("nama").value.toUpperCase();
   const liter = parseFloat(document.getElementById("liter").value);
+
+  if(!nama || !liter) return alert("Isi semua!");
 
   await addDoc(collection(db, "drum2"), {
     nama,
@@ -211,7 +218,7 @@ window.loadData = async function() {
           ${data.dexlite ? "checked" : ""}
           ${(role !== "user" || data.dexLock) ? "disabled" : ""}
           onchange="toggleDexlite('${d.id}', this.checked)">
-        
+
         ${
           role === "admin"
           ? `<span onclick="toggleLock('${d.id}', ${data.dexLock})">
