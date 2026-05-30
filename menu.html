@@ -2,108 +2,233 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Menu Utama</title>
+<title>Data Pertalite</title>
 
 <style>
-body {
-  font-family: Arial;
-  background: #121212;
-  color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+body{
+  font-family:Arial;
+  background:#111;
+  color:#fff;
+  padding:15px;
 }
 
-.menu-box {
-  text-align: center;
-  background: #1e1e1e;
-  padding: 30px;
-  border-radius: 10px;
-  width: 250px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+h2{text-align:center;}
+
+.menu{
+  text-align:center;
+  margin-bottom:15px;
 }
 
-h2 {
-  margin-bottom: 20px;
+.menu a{
+  display:inline-block;
+  padding:10px 20px;
+  background:green;
+  color:white;
+  text-decoration:none;
+  border-radius:6px;
+  font-weight:bold;
 }
 
-.menu-btn {
-  display: block;
-  width: 100%;
-  padding: 15px;
-  margin: 10px 0;
-  font-size: 18px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: 0.2s;
+.menu a:hover{
+  background:darkgreen;
 }
 
-.sambo {
-  background: #0a84ff;
+input,button{
+  padding:8px;
+  margin:3px 0;
+  width:100%;
+  font-size:14px;
 }
 
-.umum {
-  background: #34c759;
+button{
+  background:green;
+  color:white;
+  border:none;
 }
 
-.menu-btn:hover {
-  transform: scale(1.05);
-  opacity: 0.9;
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:15px;
 }
 
-.logout {
-  margin-top: 20px;
-  background: red;
-  padding: 10px;
-  width: 100%;
+th,td{
+  border:1px solid #444;
+  padding:6px;
+  text-align:center;
+}
+
+.small{
+  width:55px;
+}
+
+.del{
+  background:red;
+  color:white;
+  border:none;
+  width:30px;
+  cursor:pointer;
+  margin-left:3px;
+}
+
+.red{
+  background:red;
+  color:white;
+  font-weight:bold;
 }
 </style>
-
 </head>
 
 <body>
 
-<div class="menu-box">
-
-  <h2>MENU UTAMA</h2>
-
-  <!-- 🔥 SAMBO KE DRUM -->
-  <button class="menu-btn sambo" onclick="goSambo()">SAMBO</button>
-
-  <button class="menu-btn umum" onclick="goUmum()">UMUM</button>
-
-  <button class="menu-btn logout" onclick="logout()">Logout</button>
-
+<!-- 🔥 MENU BARU -->
+<div class="menu">
+  <a href="pertalite.html">⬅ MENU PERTALITE</a>
 </div>
 
+<h2>DATA PERTALITE</h2>
+
+<h3>Tambah Data</h3>
+<input type="text" id="nama" placeholder="Nama">
+<input type="number" id="stok" placeholder="Stock Awal">
+<button onclick="tambah()">TAMBAH</button>
+
+<hr>
+
+<table>
+<thead>
+<tr>
+<th>No</th>
+<th>Nama</th>
+<th>Stock</th>
+<th>Update</th>
+<th>Transaksi</th>
+</tr>
+</thead>
+
+<tbody id="tabel"></tbody>
+</table>
+
 <script>
+let data = JSON.parse(localStorage.getItem("pertalite_menu")) || [];
 
-// CEK LOGIN
-let role = localStorage.getItem("role");
-
-if(!role){
-  location.href = "index.html";
+function simpan(){
+  localStorage.setItem("pertalite_menu", JSON.stringify(data));
 }
 
-// 🔥 SAMBO → DRUM.HTML
-function goSambo(){
-  location.href = "drum.html";
+function render(){
+  let t = document.getElementById("tabel");
+  t.innerHTML = "";
+
+  data.forEach((d,i)=>{
+
+    if(!d.transaksi){
+      d.transaksi = [];
+    }
+
+    let kolom = "";
+
+    d.transaksi.forEach((v,j)=>{
+      kolom += `
+        <div>
+          <input class="small" type="number"
+            value="${v}"
+            onblur="edit(${i},${j},this)">
+          <button class="del" onclick="hapus(${i},${j})">-</button>
+        </div>
+      `;
+    });
+
+    if(d.update > 0){
+      kolom += `
+        <input class="small" type="number"
+          placeholder="+"
+          onblur="tambahTransaksi(${i},this)">
+      `;
+    }
+
+    let updateClass = d.update == 0 ? "red" : "";
+
+    t.innerHTML += `
+      <tr>
+        <td>${i+1}</td>
+        <td>${d.nama}</td>
+        <td>${d.stock}</td>
+        <td class="${updateClass}">${d.update}</td>
+        <td>${kolom}</td>
+      </tr>
+    `;
+  });
+
+  simpan();
 }
 
-// UMUM (bebas nanti mau isi apa)
-function goUmum(){
-  location.href = "drum2.html";
+function tambah(){
+  let nama = document.getElementById("nama").value;
+  let stok = parseFloat(document.getElementById("stok").value);
+
+  if(nama && !isNaN(stok)){
+    data.push({
+      nama:nama,
+      stock:stok,
+      update:stok,
+      transaksi:[]
+    });
+
+    document.getElementById("nama").value = "";
+    document.getElementById("stok").value = "";
+
+    render();
+  }
 }
 
-// LOGOUT
-function logout(){
-  localStorage.clear();
-  location.href = "index.html";
+function tambahTransaksi(i,input){
+  let val = parseFloat(input.value);
+
+  if(isNaN(val) || val <= 0) return;
+  if(data[i].update <= 0) return;
+
+  data[i].update -= val;
+
+  if(data[i].update < 0){
+    data[i].update = 0;
+  }
+
+  data[i].transaksi.push(val);
+
+  render();
 }
 
+function edit(i,j,input){
+  let val = parseFloat(input.value);
+
+  if(isNaN(val)) return;
+
+  let old = data[i].transaksi[j] || 0;
+  let selisih = val - old;
+
+  data[i].update -= selisih;
+
+  if(data[i].update < 0){
+    data[i].update = 0;
+  }
+
+  data[i].transaksi[j] = val;
+
+  render();
+}
+
+function hapus(i,j){
+  let val = data[i].transaksi[j];
+
+  data[i].update += val;
+
+  data[i].transaksi.splice(j,1);
+
+  render();
+}
+
+render();
 </script>
 
 </body>
