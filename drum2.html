@@ -42,15 +42,6 @@ th, td {
   text-align: center;
 }
 
-/* 🔥 HIGHLIGHT CEKLIS */
-.row-checked {
-  background: rgba(0, 255, 120, 0.18);
-}
-
-.row-unchecked {
-  background: transparent;
-}
-
 .lock-on {
   color: #00ff7f;
   font-weight: bold;
@@ -68,6 +59,11 @@ th, td {
   padding: 10px;
   background: #222;
   border: 1px solid #555;
+}
+
+/* 🔵 CEKLIS BIRU */
+input[type="checkbox"] {
+  accent-color: #007bff;
 }
 </style>
 </head>
@@ -178,10 +174,11 @@ window.loadData = async function() {
     let lockClass = data.dexLock ? "lock-on" : "lock-off";
 
     html += `
-      <tr class="${data.ceklis ? 'row-checked' : 'row-unchecked'}">
+      <tr>
         <td>${data.nama}</td>
         <td>${data.liter}</td>
 
+        <!-- DEX -->
         <td>
           <input type="checkbox"
             ${data.dexlite ? "checked" : ""}
@@ -198,6 +195,7 @@ window.loadData = async function() {
           }
         </td>
 
+        <!-- CEKLIS -->
         <td>
           <input type="checkbox"
             ${data.ceklis ? "checked" : ""}
