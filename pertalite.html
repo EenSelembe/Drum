@@ -55,7 +55,7 @@ th,td{
 }
 
 .small{
-  width:60px;
+  width:70px;
 }
 
 .del{
@@ -100,7 +100,6 @@ th,td{
 
 <script type="module">
 
-// 🔥 FIREBASE IMPORT (PAKAI CONFIG KAMU)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import {
   getDatabase,
@@ -111,7 +110,6 @@ import {
   remove
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
 
-// 🔥 FIREBASE CONFIG (DARI KAMU)
 const firebaseConfig = {
   apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
   authDomain: "drum-26d1c.firebaseapp.com",
@@ -126,10 +124,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🔥 ROLE FIX (LOCALSTORAGE)
+// 🔥 ROLE
 let role = localStorage.getItem("role");
-
-console.log("ROLE:", role);
 
 if(!role){
   alert("Silakan login dulu");
@@ -141,14 +137,14 @@ document.getElementById("roleText").innerText = role.toUpperCase();
 // 🔥 ADMIN FORM
 if(role === "admin"){
   document.getElementById("adminForm").innerHTML = `
-    <h3>Tambah Data (ADMIN)</h3>
+    <h3>Tambah Data</h3>
     <input id="nama" placeholder="Nama">
-    <input id="stok" type="number" placeholder="Stock">
+    <input id="stok" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="Stock">
     <button onclick="tambah()">TAMBAH</button>
   `;
 }
 
-// 🔥 DATA REALTIME
+// 🔥 DATA
 let data = {};
 
 onValue(ref(db,"pertalite"), snap=>{
@@ -156,8 +152,9 @@ onValue(ref(db,"pertalite"), snap=>{
   render();
 });
 
-// 🔥 TOTAL HITUNG
+// 🔥 TOTAL
 function hitungTotal(){
+
   let total = 0;
 
   Object.values(data).forEach(d=>{
@@ -169,7 +166,7 @@ function hitungTotal(){
     "Total Uang: Rp " + (total * 10000).toLocaleString("id-ID");
 }
 
-// 🔥 RENDER TABLE
+// 🔥 RENDER
 function render(){
 
   let t = document.getElementById("tabel");
@@ -187,6 +184,9 @@ function render(){
       kolom += `
         <div>
           <input class="small"
+            type="number"
+            inputmode="numeric"
+            pattern="[0-9]*"
             value="${v}"
             ${role==="user" ? `onchange="edit('${key}',${j},this)"` : "disabled"}>
           ${role==="user" ? `<button class="del" onclick="hapusTransaksi('${key}',${j})">-</button>` : ""}
@@ -196,7 +196,12 @@ function render(){
 
     if(role==="user" && d.update > 0){
       kolom += `
-        <input class="small" placeholder="+" onchange="tambahTransaksi('${key}',this)">
+        <input class="small"
+               type="number"
+               inputmode="numeric"
+               pattern="[0-9]*"
+               placeholder="+"
+               onchange="autoTransaksi('${key}',this)">
       `;
     }
 
@@ -219,7 +224,7 @@ function render(){
   hitungTotal();
 }
 
-// 🔥 TAMBAH DATA (ADMIN)
+// 🔥 TAMBAH ADMIN
 window.tambah = function(){
 
   let nama = document.getElementById("nama").value;
@@ -240,8 +245,8 @@ window.tambah = function(){
   document.getElementById("stok").value="";
 };
 
-// 🔥 TRANSAKSI USER
-window.tambahTransaksi = function(key,input){
+// 🔥 AUTO TRANSAKSI (REALTIME KETIK)
+window.autoTransaksi = function(key,input){
 
   let val = parseFloat(input.value);
   if(isNaN(val)) return;
@@ -258,7 +263,7 @@ window.tambahTransaksi = function(key,input){
   input.value="";
 };
 
-// 🔥 EDIT TRANSAKSI
+// 🔥 EDIT
 window.edit = function(key,j,input){
 
   let val = parseFloat(input.value);
@@ -290,7 +295,7 @@ window.hapusTransaksi = function(key,j){
   set(ref(db,"pertalite/"+key), d);
 };
 
-// 🔥 HAPUS DATA (ADMIN)
+// 🔥 HAPUS DATA
 window.hapus = function(key){
   remove(ref(db,"pertalite/"+key));
 };
