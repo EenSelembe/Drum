@@ -23,14 +23,6 @@ input {
 #nama { width: 50%; }
 #liter { width: 20%; }
 
-button {
-  padding: 8px;
-  cursor: pointer;
-}
-
-.add { background: blue; color: white; }
-.logout { background: red; color: white; }
-
 table {
   width: 100%;
   border-collapse: collapse;
@@ -41,6 +33,14 @@ th, td {
   padding: 8px;
   text-align: center;
 }
+
+button {
+  padding: 6px;
+  cursor: pointer;
+}
+
+.add { background: blue; color: white; }
+.logout { background: red; color: white; }
 
 .lock-on {
   color: #00ff7f;
@@ -75,7 +75,6 @@ th, td {
 
 <button class="add" onclick="tambahData()">Tambah Data</button>
 
-<!-- TOTAL -->
 <div class="total-box">
   Total Semua: <span id="totalSemua">0</span> Rp<br>
   Total ✔: <span id="totalCeklis">0</span> L<br>
@@ -105,11 +104,12 @@ import {
   getDocs,
   deleteDoc,
   doc,
-  updateDoc
+  updateDoc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 
-// ================== ROLE FIX ==================
+// ================== ROLE ==================
 const role = localStorage.getItem("role") || "user";
 
 if(!localStorage.getItem("role")){
@@ -130,7 +130,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ================== TAMBAH (ADMIN ONLY) ==================
+// ================== TAMBAH ==================
 window.tambahData = async function() {
   if(role !== "admin") return;
 
@@ -172,11 +172,11 @@ window.loadData = async function() {
         <td>${data.nama}</td>
         <td>${data.liter}</td>
 
-        <!-- DEX -->
+        <!-- DEX FIX -->
         <td>
           <input type="checkbox"
             ${data.dexlite ? "checked" : ""}
-            ${role === "admin" ? "disabled" : ""}
+            ${(role !== "user" || data.dexLock) ? "disabled" : ""}
             onchange="toggleDexlite('${d.id}', this.checked)">
 
           ${
@@ -213,9 +213,17 @@ window.loadData = async function() {
   document.getElementById("totalDex").innerText = totalDex.toLocaleString("id-ID");
 }
 
-// ================== DEX USER ==================
+// ================== DEXLITE FIX (ANTI BYPASS) ==================
 window.toggleDexlite = async function(id, status){
-  if(role === "admin") return;
+
+  const snap = await getDoc(doc(db,"drum2",id));
+  const data = snap.data();
+
+  // ❌ kalau di-lock admin → STOP
+  if(data.dexLock) return;
+
+  // ❌ admin tidak boleh ceklis
+  if(role !== "user") return;
 
   await updateDoc(doc(db,"drum2",id),{
     dexlite: status
@@ -224,7 +232,7 @@ window.toggleDexlite = async function(id, status){
   loadData();
 }
 
-// ================== LOCK ADMIN ==================
+// ================== LOCK ==================
 window.toggleLock = async function(id, current){
   if(role !== "admin") return;
 
@@ -235,9 +243,9 @@ window.toggleLock = async function(id, current){
   loadData();
 }
 
-// ================== CEKLIS USER ==================
+// ================== CEKLIS ==================
 window.toggleCeklis = async function(id, status){
-  if(role === "admin") return;
+  if(role !== "user") return;
 
   await updateDoc(doc(db,"drum2",id),{
     ceklis: status
@@ -246,7 +254,7 @@ window.toggleCeklis = async function(id, status){
   loadData();
 }
 
-// ================== DELETE ADMIN ==================
+// ================== DELETE ==================
 window.hapusData = async function(id){
   if(role !== "admin") return;
 
