@@ -2,234 +2,69 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Data Pertalite</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MENU SPBU</title>
 
 <style>
-body{
-  font-family:Arial;
-  background:#111;
-  color:#fff;
-  padding:15px;
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: #fff;
 }
 
-h2{text-align:center;}
-
-.menu{
-  text-align:center;
-  margin-bottom:15px;
+header {
+  text-align: center;
+  padding: 20px;
+  background: #222;
+  font-size: 22px;
+  font-weight: bold;
 }
 
-.menu a{
-  display:inline-block;
-  padding:10px 20px;
-  background:green;
-  color:white;
-  text-decoration:none;
-  border-radius:6px;
-  font-weight:bold;
+.container {
+  padding: 20px;
 }
 
-.menu a:hover{
-  background:darkgreen;
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
-input,button{
-  padding:8px;
-  margin:3px 0;
-  width:100%;
-  font-size:14px;
+.menu a {
+  text-decoration: none;
+  background: #1e88e5;
+  color: white;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 18px;
+  transition: 0.2s;
 }
 
-button{
-  background:green;
-  color:white;
-  border:none;
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:15px;
-}
-
-th,td{
-  border:1px solid #444;
-  padding:6px;
-  text-align:center;
-}
-
-.small{
-  width:55px;
-}
-
-.del{
-  background:red;
-  color:white;
-  border:none;
-  width:30px;
-  cursor:pointer;
-  margin-left:3px;
-}
-
-.red{
-  background:red;
-  color:white;
-  font-weight:bold;
+.menu a:hover {
+  background: #1565c0;
+  transform: scale(1.02);
 }
 </style>
+
 </head>
 
 <body>
 
-<!-- 🔥 MENU BARU -->
-<div class="menu">
-  <a href="pertalite.html">⬅ MENU PERTALITE</a>
+<header>
+MENU SPBU
+</header>
+
+<div class="container">
+  <div class="menu">
+
+    <a href="drum.html">SOLAR SAMBO</a>
+    <a href="drum2.html">SOLAR UMUM</a>
+    <a href="pertalite.html">PERTALITE</a>
+
+  </div>
 </div>
-
-<h2>DATA PERTALITE</h2>
-
-<h3>Tambah Data</h3>
-<input type="text" id="nama" placeholder="Nama">
-<input type="number" id="stok" placeholder="Stock Awal">
-<button onclick="tambah()">TAMBAH</button>
-
-<hr>
-
-<table>
-<thead>
-<tr>
-<th>No</th>
-<th>Nama</th>
-<th>Stock</th>
-<th>Update</th>
-<th>Transaksi</th>
-</tr>
-</thead>
-
-<tbody id="tabel"></tbody>
-</table>
-
-<script>
-let data = JSON.parse(localStorage.getItem("pertalite_menu")) || [];
-
-function simpan(){
-  localStorage.setItem("pertalite_menu", JSON.stringify(data));
-}
-
-function render(){
-  let t = document.getElementById("tabel");
-  t.innerHTML = "";
-
-  data.forEach((d,i)=>{
-
-    if(!d.transaksi){
-      d.transaksi = [];
-    }
-
-    let kolom = "";
-
-    d.transaksi.forEach((v,j)=>{
-      kolom += `
-        <div>
-          <input class="small" type="number"
-            value="${v}"
-            onblur="edit(${i},${j},this)">
-          <button class="del" onclick="hapus(${i},${j})">-</button>
-        </div>
-      `;
-    });
-
-    if(d.update > 0){
-      kolom += `
-        <input class="small" type="number"
-          placeholder="+"
-          onblur="tambahTransaksi(${i},this)">
-      `;
-    }
-
-    let updateClass = d.update == 0 ? "red" : "";
-
-    t.innerHTML += `
-      <tr>
-        <td>${i+1}</td>
-        <td>${d.nama}</td>
-        <td>${d.stock}</td>
-        <td class="${updateClass}">${d.update}</td>
-        <td>${kolom}</td>
-      </tr>
-    `;
-  });
-
-  simpan();
-}
-
-function tambah(){
-  let nama = document.getElementById("nama").value;
-  let stok = parseFloat(document.getElementById("stok").value);
-
-  if(nama && !isNaN(stok)){
-    data.push({
-      nama:nama,
-      stock:stok,
-      update:stok,
-      transaksi:[]
-    });
-
-    document.getElementById("nama").value = "";
-    document.getElementById("stok").value = "";
-
-    render();
-  }
-}
-
-function tambahTransaksi(i,input){
-  let val = parseFloat(input.value);
-
-  if(isNaN(val) || val <= 0) return;
-  if(data[i].update <= 0) return;
-
-  data[i].update -= val;
-
-  if(data[i].update < 0){
-    data[i].update = 0;
-  }
-
-  data[i].transaksi.push(val);
-
-  render();
-}
-
-function edit(i,j,input){
-  let val = parseFloat(input.value);
-
-  if(isNaN(val)) return;
-
-  let old = data[i].transaksi[j] || 0;
-  let selisih = val - old;
-
-  data[i].update -= selisih;
-
-  if(data[i].update < 0){
-    data[i].update = 0;
-  }
-
-  data[i].transaksi[j] = val;
-
-  render();
-}
-
-function hapus(i,j){
-  let val = data[i].transaksi[j];
-
-  data[i].update += val;
-
-  data[i].transaksi.splice(j,1);
-
-  render();
-}
-
-render();
-</script>
 
 </body>
 </html>
