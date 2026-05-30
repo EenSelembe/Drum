@@ -42,22 +42,6 @@ th, td {
   text-align: center;
 }
 
-/* 🔥 WARNA KOLOM SAJA */
-td.dex-active {
-  background: #66ff66; /* hijau stabilo */
-  color: #000;
-}
-
-td.solar-active {
-  background: #ffb84d; /* orange stabilo */
-  color: #000;
-}
-
-/* animasi halus */
-td {
-  transition: 0.3s;
-}
-
 .lock-on {
   color: red;
   font-weight: bold;
@@ -65,26 +49,61 @@ td {
 }
 
 .lock-off {
-  color: blue;
+  color: cyan;
   font-weight: bold;
   cursor: pointer;
 }
 
-.total-box {
-  margin: 10px 0;
-  padding: 10px;
-  background: #222;
-  border: 1px solid #555;
+/* 🔥 WARNA KOLOM CEKLIS */
+.dex-checked {
+  background: #00ff99;
+  color: black;
+  font-weight: bold;
+}
+
+.solar-checked {
+  background: orange;
+  color: black;
+  font-weight: bold;
 }
 
 /* checkbox */
 input[type="checkbox"] {
-  width: 22px;
-  height: 22px;
-  accent-color: blue;
-  transform: scale(1.2);
+  width: 20px;
+  height: 20px;
   cursor: pointer;
 }
+
+/* 🔥 POPUP */
+.popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0,0,0,0.7);
+}
+
+.popup-box {
+  background: #222;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.popup-box button {
+  padding: 8px 15px;
+  margin: 5px;
+  border: none;
+  cursor: pointer;
+}
+
+.yes { background: limegreen; }
+.no { background: red; color: white; }
+
 </style>
 </head>
 
@@ -101,12 +120,6 @@ input[type="checkbox"] {
 
 <button class="add" onclick="tambahData()">Tambah Data</button>
 
-<div class="total-box">
-  Total Semua: <span id="totalSemua">0</span> Rp<br>
-  Total ✔: <span id="totalCeklis">0</span> L<br>
-  Total DEXLITE: <span id="totalDex">0</span> Rp
-</div>
-
 <table>
 <thead>
 <tr>
@@ -121,7 +134,17 @@ input[type="checkbox"] {
 <tbody id="tbody"></tbody>
 </table>
 
+<!-- 🔥 POPUP -->
+<div id="popup" class="popup">
+  <div class="popup-box">
+    <p>Apakah BBM sudah terisi?</p>
+    <button class="yes" onclick="jawabPopup(true)">YA</button>
+    <button class="no" onclick="jawabPopup(false)">BELUM</button>
+  </div>
+</div>
+
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import {
   getFirestore,
@@ -134,112 +157,90 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-// ROLE
 const role = localStorage.getItem("role") || "user";
 
-if(!localStorage.getItem("role")){
-  alert("Silakan login dulu!");
-  location.href = "index.html";
-}
-
-// FIREBASE
 const firebaseConfig = {
-  apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
-  authDomain: "drum-26d1c.firebaseapp.com",
-  projectId: "drum-26d1c",
-  storageBucket: "drum-26d1c.appspot.com",
-  messagingSenderId: "960892789351",
-  appId: "1:960892789351:web:ca1c653c85cab59586eac2"
+  apiKey: "xxx",
+  authDomain: "xxx",
+  projectId: "xxx"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// TAMBAH
+/* ================= TAMBAH ================= */
 window.tambahData = async function() {
+
   if(role !== "admin") return;
 
   const nama = document.getElementById("nama").value.toUpperCase();
   const liter = parseFloat(document.getElementById("liter").value);
-
-  if(!nama || !liter) return alert("Isi semua!");
 
   await addDoc(collection(db, "drum2"), {
     nama,
     liter,
     ceklis: false,
     dexlite: false,
-    dexLock: false
+    dexLock: liter < 100 ? true : false
   });
 
   loadData();
 }
 
-// LOAD
+/* ================= LOAD ================= */
 window.loadData = async function() {
+
   const snap = await getDocs(collection(db, "drum2"));
 
   let html = "";
-  let totalCeklis = 0;
-  let totalDex = 0;
 
   snap.forEach((d) => {
+
     const data = d.data();
 
-    if(data.ceklis) totalCeklis += data.liter;
-    if(data.dexlite) totalDex += 50000;
-
-    let lockText = data.dexLock ? "LOCK" : "OPEN";
-    let lockClass = data.dexLock ? "lock-on" : "lock-off";
+    let dexClass = data.dexlite ? "dex-checked" : "";
+    let solarClass = data.ceklis ? "solar-checked" : "";
 
     html += `
-      <tr>
-        <td>${data.nama}</td>
-        <td>${data.liter}</td>
+    <tr>
+      <td>${data.nama}</td>
+      <td>${data.liter}</td>
 
-        <!-- DEX -->
-        <td class="${data.dexlite ? 'dex-active' : ''}">
-          <input type="checkbox"
-            ${data.dexlite ? "checked" : ""}
-            ${(role !== "user" || data.dexLock) ? "disabled" : ""}
-            onchange="toggleDexlite('${d.id}', this.checked)">
+      <td class="${dexClass}">
+        <input type="checkbox"
+          ${data.dexlite ? "checked" : ""}
+          ${(role !== "user" || data.dexLock) ? "disabled" : ""}
+          onchange="toggleDexlite('${d.id}', this.checked)">
+        
+        ${
+          role === "admin"
+          ? `<span onclick="toggleLock('${d.id}', ${data.dexLock})">
+              ${data.dexLock ? "LOCK" : "OPEN"}
+            </span>`
+          : ""
+        }
+      </td>
 
-          ${
-            role === "admin"
-              ? `<span onclick="toggleLock('${d.id}', ${data.dexLock})"
-                        class="${lockClass}">
-                  ${lockText}
-                </span>`
-              : ""
-          }
-        </td>
+      <td class="${solarClass}">
+        <input type="checkbox"
+          ${data.ceklis ? "checked" : ""}
+          ${role === "admin" ? "disabled" : ""}
+          onchange="toggleCeklis('${d.id}', this.checked)">
+      </td>
 
-        <!-- SOLAR -->
-        <td class="${data.ceklis ? 'solar-active' : ''}">
-          <input type="checkbox"
-            ${data.ceklis ? "checked" : ""}
-            ${role === "admin" ? "disabled" : ""}
-            onchange="toggleCeklis('${d.id}', this.checked)">
-        </td>
-
-        <td>
-          ${role === "admin" ? `<button onclick="hapusData('${d.id}')">Hapus</button>` : ""}
-        </td>
-      </tr>
+      <td>
+        ${role === "admin" ? `<button onclick="hapusData('${d.id}')">Hapus</button>` : ""}
+      </td>
+    </tr>
     `;
   });
 
   document.getElementById("tbody").innerHTML = html;
-
-  let totalSemua = (totalCeklis * 6800) + totalDex;
-
-  document.getElementById("totalSemua").innerText = totalSemua.toLocaleString("id-ID");
-  document.getElementById("totalCeklis").innerText = totalCeklis;
-  document.getElementById("totalDex").innerText = totalDex.toLocaleString("id-ID");
 }
 
-// DEX
+/* ================= DEX ================= */
 window.toggleDexlite = async function(id, status){
+
   const snap = await getDoc(doc(db,"drum2",id));
   const data = snap.data();
 
@@ -253,8 +254,39 @@ window.toggleDexlite = async function(id, status){
   loadData();
 }
 
-// LOCK
+/* ================= POPUP ================= */
+let selectedId = null;
+let selectedStatus = null;
+
+window.toggleCeklis = function(id, status){
+
+  if(role !== "user") return;
+
+  selectedId = id;
+  selectedStatus = status;
+
+  document.getElementById("popup").style.display = "flex";
+}
+
+window.jawabPopup = async function(jawab){
+
+  document.getElementById("popup").style.display = "none";
+
+  if(!jawab){
+    loadData();
+    return;
+  }
+
+  await updateDoc(doc(db,"drum2",selectedId),{
+    ceklis: selectedStatus
+  });
+
+  loadData();
+}
+
+/* ================= LOCK ================= */
 window.toggleLock = async function(id, current){
+
   if(role !== "admin") return;
 
   await updateDoc(doc(db,"drum2",id),{
@@ -264,33 +296,23 @@ window.toggleLock = async function(id, current){
   loadData();
 }
 
-// CEKLIS
-window.toggleCeklis = async function(id, status){
-  if(role !== "user") return;
-
-  await updateDoc(doc(db,"drum2",id),{
-    ceklis: status
-  });
-
-  loadData();
-}
-
-// DELETE
+/* ================= DELETE ================= */
 window.hapusData = async function(id){
+
   if(role !== "admin") return;
 
   await deleteDoc(doc(db,"drum2",id));
   loadData();
 }
 
-// LOGOUT
+/* ================= LOGOUT ================= */
 window.logout = function(){
   localStorage.removeItem("role");
   location.href = "index.html";
 }
 
 loadData();
-</script>
 
+</script>
 </body>
 </html>
