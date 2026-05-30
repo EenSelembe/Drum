@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>PERTALITE ONLINE FIX</title>
+<title>PERTALITE SYSTEM FIX</title>
 
 <style>
 body{
@@ -14,18 +14,23 @@ body{
 
 h2{text-align:center;}
 
-.total-box{
+#roleBox{
+  text-align:center;
+  background:#222;
+  padding:8px;
+  margin-bottom:10px;
+}
+
+.total{
   background:#222;
   padding:10px;
   margin-bottom:10px;
   text-align:center;
-  font-size:16px;
-  border:1px solid #444;
 }
 
 input,button{
   padding:8px;
-  margin:3px 0;
+  margin:4px 0;
   width:100%;
   font-size:14px;
 }
@@ -40,7 +45,7 @@ button{
 table{
   width:100%;
   border-collapse:collapse;
-  margin-top:15px;
+  margin-top:10px;
 }
 
 th,td{
@@ -51,12 +56,6 @@ th,td{
 
 .small{
   width:60px;
-}
-
-.row{
-  display:flex;
-  gap:5px;
-  align-items:center;
 }
 
 .del{
@@ -70,29 +69,19 @@ th,td{
 .red{
   background:red;
   color:white;
-  font-weight:bold;
-}
-
-#roleBox{
-  text-align:center;
-  background:#222;
-  padding:5px;
-  margin-bottom:10px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>DATA PERTALITE (ONLINE)</h2>
+<h2>DATA PERTALITE</h2>
 
 <div id="roleBox">ROLE: <span id="roleText"></span></div>
 
-<div class="total-box" id="totalInfo">Loading...</div>
+<div class="total" id="totalBox">Loading...</div>
 
 <div id="adminForm"></div>
-
-<hr>
 
 <table>
 <thead>
@@ -111,11 +100,18 @@ th,td{
 
 <script type="module">
 
+// 🔥 FIREBASE IMPORT (STABIL)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, push, remove } 
-from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
+import {
+  getDatabase,
+  ref,
+  set,
+  push,
+  onValue,
+  remove
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
 
-// 🔥 FIREBASE CONFIG
+// 🔥 CONFIG FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
   authDomain: "drum-26d1c.firebaseapp.com",
@@ -128,30 +124,29 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🔥 FIX PENTING: PAKAI LOCALSTORAGE
+// 🔥 ROLE FIX (WAJIB LOCALSTORAGE)
 let role = localStorage.getItem("role");
 
 console.log("ROLE:", role);
 
-// kalau tidak ada role
 if(!role){
   alert("Silakan login dulu");
   window.location.href = "index.html";
 }
 
-// tampil role
 document.getElementById("roleText").innerText = role.toUpperCase();
 
-// 🔥 FORM ADMIN
+// 🔥 ADMIN FORM
 if(role === "admin"){
   document.getElementById("adminForm").innerHTML = `
-    <h3>Tambah Data (ADMIN)</h3>
-    <input type="text" id="nama" placeholder="Nama">
-    <input type="number" id="stok" placeholder="Stock Awal">
+    <h3>Tambah Data</h3>
+    <input id="nama" placeholder="Nama">
+    <input id="stok" type="number" placeholder="Stock">
     <button onclick="tambah()">TAMBAH</button>
   `;
 }
 
+// 🔥 DATA FIREBASE REALTIME
 let data = {};
 
 onValue(ref(db,"pertalite"), snap=>{
@@ -167,13 +162,14 @@ function hitungTotal(){
     total += (d.stock - d.update);
   });
 
-  document.getElementById("totalInfo").innerHTML =
+  document.getElementById("totalBox").innerHTML =
     "Total Terpakai: " + total + " LITER<br>" +
     "Total Uang: Rp " + (total * 10000).toLocaleString("id-ID");
 }
 
-// 🔥 RENDER
+// 🔥 RENDER TABLE
 function render(){
+
   let t = document.getElementById("tabel");
   t.innerHTML = "";
 
@@ -186,30 +182,23 @@ function render(){
     let kolom = "";
 
     d.transaksi.forEach((v,j)=>{
-
       kolom += `
-        <div class="row">
-
+        <div>
           <input class="small"
             value="${v}"
-            ${role === "user" ? `onchange="edit('${key}',${j},this)"` : `disabled`}>
-
-          ${role === "user" ? `
-            <button class="del" onclick="hapusTransaksi('${key}',${j})">-</button>
-          ` : ""}
+            ${role==="user" ? `onchange="edit('${key}',${j},this)"` : "disabled"}>
+          ${role==="user" ? `<button class="del" onclick="hapusTransaksi('${key}',${j})">-</button>` : ""}
         </div>
       `;
     });
 
-    if(role === "user" && d.update > 0){
+    if(role==="user" && d.update > 0){
       kolom += `
-        <input class="small"
-          placeholder="+"
-          onchange="tambahTransaksi('${key}',this)">
+        <input class="small" placeholder="+" onchange="tambahTransaksi('${key}',this)">
       `;
     }
 
-    let red = d.update == 0 ? "red" : "";
+    let red = d.update==0 ? "red" : "";
 
     t.innerHTML += `
       <tr>
@@ -218,11 +207,8 @@ function render(){
         <td>${d.stock}</td>
         <td class="${red}">${d.update}</td>
         <td>${kolom}</td>
-
         <td>
-          ${role === "admin" ? `
-            <button class="del" onclick="hapusData('${key}')">🗑️</button>
-          ` : ""}
+          ${role==="admin" ? `<button class="del" onclick="hapus('${key}')">🗑️</button>` : ""}
         </td>
       </tr>
     `;
@@ -233,7 +219,6 @@ function render(){
 
 // 🔥 TAMBAH DATA (ADMIN)
 window.tambah = function(){
-  if(role !== "admin") return;
 
   let nama = document.getElementById("nama").value;
   let stok = parseFloat(document.getElementById("stok").value);
@@ -243,18 +228,19 @@ window.tambah = function(){
   let newRef = push(ref(db,"pertalite"));
 
   set(newRef,{
-    nama,
+    nama:nama,
     stock:stok,
     update:stok,
     transaksi:[]
   });
 
-  document.getElementById("nama").value = "";
-  document.getElementById("stok").value = "";
+  document.getElementById("nama").value="";
+  document.getElementById("stok").value="";
 };
 
-// 🔥 TRANSAKSI (USER)
+// 🔥 TAMBAH TRANSAKSI
 window.tambahTransaksi = function(key,input){
+
   let val = parseFloat(input.value);
   if(isNaN(val)) return;
 
@@ -267,20 +253,20 @@ window.tambahTransaksi = function(key,input){
 
   set(ref(db,"pertalite/"+key), d);
 
-  input.value = "";
+  input.value="";
 };
 
-// 🔥 EDIT (USER)
+// 🔥 EDIT TRANSAKSI
 window.edit = function(key,j,input){
+
   let val = parseFloat(input.value);
   if(isNaN(val)) return;
 
   let d = data[key];
 
   let old = d.transaksi[j];
-  let selisih = val - old;
 
-  d.update -= selisih;
+  d.update -= (val - old);
   if(d.update < 0) d.update = 0;
 
   d.transaksi[j] = val;
@@ -288,21 +274,22 @@ window.edit = function(key,j,input){
   set(ref(db,"pertalite/"+key), d);
 };
 
-// 🔥 HAPUS TRANSAKSI (USER)
+// 🔥 HAPUS TRANSAKSI
 window.hapusTransaksi = function(key,j){
+
   let d = data[key];
 
   let val = d.transaksi[j];
 
   d.update += val;
+
   d.transaksi.splice(j,1);
 
   set(ref(db,"pertalite/"+key), d);
 };
 
 // 🔥 HAPUS DATA (ADMIN)
-window.hapusData = function(key){
-  if(role !== "admin") return;
+window.hapus = function(key){
   remove(ref(db,"pertalite/"+key));
 };
 
