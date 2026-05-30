@@ -42,6 +42,24 @@ th, td {
   text-align: center;
 }
 
+/* 🔵 CHECKBOX BIRU */
+input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: #007bff;
+  transform: scale(1.15);
+  cursor: pointer;
+}
+
+/* 🔵 BARIS CEKLIS (ADMIN JELAS LIHAT) */
+.row-checked {
+  background: rgba(0, 140, 255, 0.18);
+}
+
+.row-unchecked {
+  background: transparent;
+}
+
 .lock-on {
   color: #00ff7f;
   font-weight: bold;
@@ -59,11 +77,6 @@ th, td {
   padding: 10px;
   background: #222;
   border: 1px solid #555;
-}
-
-/* 🔵 CEKLIS BIRU */
-input[type="checkbox"] {
-  accent-color: #007bff;
 }
 </style>
 </head>
@@ -111,9 +124,10 @@ import {
   deleteDoc,
   doc,
   updateDoc,
-  getDoc
+  getDoc,
+  query,
+  orderBy
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-
 
 // ================== ROLE ==================
 const role = localStorage.getItem("role") || "user";
@@ -150,15 +164,22 @@ window.tambahData = async function() {
     liter,
     ceklis: false,
     dexlite: false,
-    dexLock: false
+    dexLock: false,
+    createdAt: Date.now()
   });
 
   loadData();
 }
 
-// ================== LOAD ==================
+// ================== LOAD (URUT RAPI) ==================
 window.loadData = async function() {
-  const snap = await getDocs(collection(db, "drum2"));
+
+  const q = query(
+    collection(db, "drum2"),
+    orderBy("createdAt", "asc")
+  );
+
+  const snap = await getDocs(q);
 
   let html = "";
   let totalCeklis = 0;
@@ -174,11 +195,10 @@ window.loadData = async function() {
     let lockClass = data.dexLock ? "lock-on" : "lock-off";
 
     html += `
-      <tr>
+      <tr class="${data.ceklis ? 'row-checked' : 'row-unchecked'}">
         <td>${data.nama}</td>
         <td>${data.liter}</td>
 
-        <!-- DEX -->
         <td>
           <input type="checkbox"
             ${data.dexlite ? "checked" : ""}
@@ -195,7 +215,6 @@ window.loadData = async function() {
           }
         </td>
 
-        <!-- CEKLIS -->
         <td>
           <input type="checkbox"
             ${data.ceklis ? "checked" : ""}
