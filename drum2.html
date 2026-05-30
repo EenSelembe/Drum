@@ -24,10 +24,12 @@ input {
 #liter { width: 20%; }
 
 button {
-  padding: 8px 10px;
-  margin: 5px;
+  padding: 8px;
   cursor: pointer;
 }
+
+.add { background: blue; color: white; }
+.logout { background: red; color: white; }
 
 table {
   width: 100%;
@@ -39,10 +41,6 @@ th, td {
   padding: 8px;
   text-align: center;
 }
-
-.copy { background: green; color: white; }
-
-.add { background: blue; color: white; }
 
 .lock-on {
   color: #00ff7f;
@@ -68,13 +66,14 @@ th, td {
 
 <h2>DATA DRUM 2</h2>
 
+<button class="logout" onclick="logout()">Logout</button>
+
+<br>
+
 <input type="text" id="nama" placeholder="Nama">
 <input type="number" id="liter" placeholder="Liter">
 
-<!-- 🔥 TOMBOL TAMBAH DATA -->
 <button class="add" onclick="tambahData()">Tambah Data</button>
-
-<div class="copy" onclick="copyData()">Copy</div>
 
 <!-- TOTAL -->
 <div class="total-box">
@@ -88,7 +87,7 @@ th, td {
 <tr>
 <th>Nama</th>
 <th>Liter</th>
-<th>DEXLITE</th>
+<th>DEX</th>
 <th>CEKLIS</th>
 <th>Aksi</th>
 </tr>
@@ -109,8 +108,14 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-// ================== MODE ==================
-const role = "admin"; // admin / user
+
+// ================== ROLE FIX ==================
+const role = localStorage.getItem("role") || "user";
+
+if(!localStorage.getItem("role")){
+  alert("Silakan login dulu!");
+  location.href = "index.html";
+}
 
 // ================== FIREBASE ==================
 const firebaseConfig = {
@@ -125,12 +130,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ================== TAMBAH DATA ==================
+// ================== TAMBAH (ADMIN ONLY) ==================
 window.tambahData = async function() {
+  if(role !== "admin") return;
+
   const nama = document.getElementById("nama").value.toUpperCase();
   const liter = parseFloat(document.getElementById("liter").value);
 
-  if (!nama || !liter) return alert("Isi semua!");
+  if(!nama || !liter) return alert("Isi semua!");
 
   await addDoc(collection(db, "drum2"), {
     nama,
@@ -140,25 +147,22 @@ window.tambahData = async function() {
     dexLock: false
   });
 
-  document.getElementById("nama").value = "";
-  document.getElementById("liter").value = "";
-
   loadData();
 }
 
 // ================== LOAD ==================
 window.loadData = async function() {
   const snap = await getDocs(collection(db, "drum2"));
-  let html = "";
 
+  let html = "";
   let totalCeklis = 0;
   let totalDex = 0;
 
   snap.forEach((d) => {
     const data = d.data();
 
-    if (data.ceklis) totalCeklis += data.liter;
-    if (data.dexlite) totalDex += 50000;
+    if(data.ceklis) totalCeklis += data.liter;
+    if(data.dexlite) totalDex += 50000;
 
     let lockText = data.dexLock ? "LOCK" : "OPEN";
     let lockClass = data.dexLock ? "lock-on" : "lock-off";
@@ -168,7 +172,7 @@ window.loadData = async function() {
         <td>${data.nama}</td>
         <td>${data.liter}</td>
 
-        <!-- DEXLITE -->
+        <!-- DEX -->
         <td>
           <input type="checkbox"
             ${data.dexlite ? "checked" : ""}
@@ -179,7 +183,7 @@ window.loadData = async function() {
             role === "admin"
               ? `<span onclick="toggleLock('${d.id}', ${data.dexLock})"
                         class="${lockClass}">
-                  DEX (${lockText})
+                  ${lockText}
                 </span>`
               : ""
           }
@@ -194,7 +198,7 @@ window.loadData = async function() {
         </td>
 
         <td>
-          <button onclick="hapusData('${d.id}')">Hapus</button>
+          ${role === "admin" ? `<button onclick="hapusData('${d.id}')">Hapus</button>` : ""}
         </td>
       </tr>
     `;
@@ -204,66 +208,56 @@ window.loadData = async function() {
 
   let totalSemua = (totalCeklis * 6800) + totalDex;
 
-  document.getElementById("totalSemua").innerText =
-    totalSemua.toLocaleString("id-ID");
-
+  document.getElementById("totalSemua").innerText = totalSemua.toLocaleString("id-ID");
   document.getElementById("totalCeklis").innerText = totalCeklis;
-
-  document.getElementById("totalDex").innerText =
-    totalDex.toLocaleString("id-ID");
+  document.getElementById("totalDex").innerText = totalDex.toLocaleString("id-ID");
 }
 
-// ================== DEXLITE ==================
-window.toggleDexlite = async function(id, status) {
-  if (role === "admin") return;
+// ================== DEX USER ==================
+window.toggleDexlite = async function(id, status){
+  if(role === "admin") return;
 
-  await updateDoc(doc(db, "drum2", id), {
+  await updateDoc(doc(db,"drum2",id),{
     dexlite: status
   });
 
   loadData();
 }
 
-// ================== LOCK DEX ==================
-window.toggleLock = async function(id, current) {
-  if (role !== "admin") return;
+// ================== LOCK ADMIN ==================
+window.toggleLock = async function(id, current){
+  if(role !== "admin") return;
 
-  await updateDoc(doc(db, "drum2", id), {
+  await updateDoc(doc(db,"drum2",id),{
     dexLock: !current
   });
 
   loadData();
 }
 
-// ================== CEKLIS ==================
-window.toggleCeklis = async function(id, status) {
-  if (role === "admin") return;
+// ================== CEKLIS USER ==================
+window.toggleCeklis = async function(id, status){
+  if(role === "admin") return;
 
-  await updateDoc(doc(db, "drum2", id), {
+  await updateDoc(doc(db,"drum2",id),{
     ceklis: status
   });
 
   loadData();
 }
 
-// ================== DELETE ==================
-window.hapusData = async function(id) {
-  await deleteDoc(doc(db, "drum2", id));
+// ================== DELETE ADMIN ==================
+window.hapusData = async function(id){
+  if(role !== "admin") return;
+
+  await deleteDoc(doc(db,"drum2",id));
   loadData();
 }
 
-// ================== COPY ==================
-window.copyData = async function() {
-  const snap = await getDocs(collection(db, "drum2"));
-  let teks = "";
-
-  snap.forEach((d) => {
-    const data = d.data();
-    teks += `${data.nama} - ${data.liter}L\n`;
-  });
-
-  navigator.clipboard.writeText(teks);
-  alert("Copied!");
+// ================== LOGOUT ==================
+window.logout = function(){
+  localStorage.removeItem("role");
+  location.href = "index.html";
 }
 
 loadData();
