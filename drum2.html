@@ -42,19 +42,10 @@ th, td {
   text-align: center;
 }
 
-.lock-on {
-  color: red;
-  font-weight: bold;
-  cursor: pointer;
-}
+.lock-on { color: red; font-weight: bold; cursor: pointer; }
+.lock-off { color: cyan; font-weight: bold; cursor: pointer; }
 
-.lock-off {
-  color: cyan;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-/* 🔥 WARNA HANYA KOLOM CEKLIS */
+/* 🔥 WARNA KOLOM */
 .dex-checked {
   background: #00ff99;
   color: black;
@@ -71,7 +62,6 @@ th, td {
 input[type="checkbox"] {
   width: 20px;
   height: 20px;
-  cursor: pointer;
 }
 
 /* 🔥 POPUP */
@@ -136,8 +126,8 @@ input[type="checkbox"] {
 
 <!-- 🔥 POPUP -->
 <div id="popup" class="popup">
-  <div class="popup-box">
-    <p>Apakah BBM sudah terisi?</p>
+  <div class="popup-box" onclick="event.stopPropagation()">
+    <p id="popupText">Pertanyaan</p>
     <button class="yes" onclick="jawabPopup(true)">YA</button>
     <button class="no" onclick="jawabPopup(false)">BELUM</button>
   </div>
@@ -157,10 +147,9 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-/* 🔐 ROLE */
 const role = localStorage.getItem("role") || "user";
 
-/* 🔥 CONFIG ASLI (JANGAN DIUBAH!) */
+/* 🔥 CONFIG ASLI */
 const firebaseConfig = {
   apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
   authDomain: "drum-26d1c.firebaseapp.com",
@@ -172,6 +161,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+/* GLOBAL */
+let selectedId = null;
+let selectedStatus = null;
+let modeCeklis = "";
 
 /* ================= TAMBAH ================= */
 window.tambahData = async function() {
@@ -188,7 +182,7 @@ window.tambahData = async function() {
     liter,
     ceklis: false,
     dexlite: false,
-    dexLock: liter < 100 ? true : false
+    dexLock: liter < 100
   });
 
   loadData();
@@ -198,7 +192,6 @@ window.tambahData = async function() {
 window.loadData = async function() {
 
   const snap = await getDocs(collection(db, "drum2"));
-
   let html = "";
 
   snap.forEach((d) => {
@@ -254,27 +247,32 @@ window.toggleDexlite = async function(id, status){
   if(data.dexLock) return;
   if(role !== "user") return;
 
-  await updateDoc(doc(db,"drum2",id),{
-    dexlite: status
-  });
+  selectedId = id;
+  selectedStatus = status;
+  modeCeklis = "dex";
 
-  loadData();
+  document.getElementById("popupText").innerText =
+    status ? "Apakah DEX sudah terisi?" : "Yakin mau lepas ceklis DEX?";
+
+  document.getElementById("popup").style.display = "flex";
 }
 
-/* ================= POPUP ================= */
-let selectedId = null;
-let selectedStatus = null;
-
+/* ================= SOLAR ================= */
 window.toggleCeklis = function(id, status){
 
   if(role !== "user") return;
 
   selectedId = id;
   selectedStatus = status;
+  modeCeklis = "solar";
+
+  document.getElementById("popupText").innerText =
+    status ? "Apakah SOLAR sudah terisi?" : "Yakin mau lepas ceklis SOLAR?";
 
   document.getElementById("popup").style.display = "flex";
 }
 
+/* ================= POPUP ================= */
 window.jawabPopup = async function(jawab){
 
   document.getElementById("popup").style.display = "none";
@@ -284,12 +282,25 @@ window.jawabPopup = async function(jawab){
     return;
   }
 
-  await updateDoc(doc(db,"drum2",selectedId),{
-    ceklis: selectedStatus
-  });
+  if(modeCeklis === "dex"){
+    await updateDoc(doc(db,"drum2",selectedId),{
+      dexlite: selectedStatus
+    });
+  } else {
+    await updateDoc(doc(db,"drum2",selectedId),{
+      ceklis: selectedStatus
+    });
+  }
 
   loadData();
 }
+
+/* 🔒 BLOK ESC */
+document.addEventListener("keydown", function(e){
+  if(e.key === "Escape"){
+    e.preventDefault();
+  }
+});
 
 /* ================= LOCK ================= */
 window.toggleLock = async function(id, current){
