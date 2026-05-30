@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Data Pertalite</title>
+<title>Data Pertalite Online</title>
 
 <style>
 body{
@@ -48,16 +48,12 @@ th,td{
   text-align:center;
 }
 
-.small{
-  width:60px;
-}
+.small{width:60px;}
 
-/* 🔥 FLEX UNTUK INPUT + TOMBOL */
 .row{
   display:flex;
   gap:5px;
   align-items:center;
-  margin-bottom:3px;
 }
 
 .del{
@@ -66,7 +62,6 @@ th,td{
   border:none;
   width:30px;
   cursor:pointer;
-  font-weight:bold;
 }
 
 .red{
@@ -79,11 +74,10 @@ th,td{
 
 <body>
 
-<h2>DATA PERTALITE</h2>
+<h2>DATA PERTALITE (ONLINE)</h2>
 
 <div class="total-box" id="totalInfo">
-Total Terpakai: 0 LITER<br>
-Total Uang: Rp 0
+Loading...
 </div>
 
 <h3>Tambah Data</h3>
@@ -108,17 +102,37 @@ Total Uang: Rp 0
 <tbody id="tabel"></tbody>
 </table>
 
-<script>
-let data = JSON.parse(localStorage.getItem("pertalite_inline")) || [];
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getDatabase, ref, set, onValue, push, remove, update } 
+from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
 
-function simpan(){
-  localStorage.setItem("pertalite_inline", JSON.stringify(data));
-}
+// 🔥 FIREBASE CONFIG KAMU
+const firebaseConfig = {
+  apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
+  authDomain: "drum-26d1c.firebaseapp.com",
+  projectId: "drum-26d1c",
+  storageBucket: "drum-26d1c.firebasestorage.app",
+  messagingSenderId: "960892789351",
+  appId: "1:960892789351:web:9cbdd5f865fb595586eac2",
+  measurementId: "G-ERBNYX188K"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let data = {};
+
+// 🔥 LIVE LISTENER (REALTIME)
+onValue(ref(db, "pertalite"), (snapshot)=>{
+  data = snapshot.val() || {};
+  render();
+});
 
 function hitungTotal(){
   let total = 0;
 
-  data.forEach(d=>{
+  Object.values(data).forEach(d=>{
     total += (d.stock - d.update);
   });
 
@@ -131,21 +145,20 @@ function render(){
   let t = document.getElementById("tabel");
   t.innerHTML = "";
 
-  data.forEach((d,i)=>{
+  let arr = Object.entries(data);
 
-    if(!d.transaksi){
-      d.transaksi = [];
-    }
+  arr.forEach(([key,d],i)=>{
+
+    if(!d.transaksi) d.transaksi = [];
 
     let kolom = "";
 
     d.transaksi.forEach((v,j)=>{
       kolom += `
         <div class="row">
-          <input class="small" type="number"
-            value="${v}"
-            onblur="edit(${i},${j},this)">
-          <button class="del" onclick="hapusTransaksi(${i},${j})">-</button>
+          <input class="small" type="number" value="${v}"
+            onchange="edit('${key}',${j},this)">
+          <button class="del" onclick="hapusTransaksi('${key}',${j})">-</button>
         </div>
       `;
     });
@@ -154,100 +167,110 @@ function render(){
       kolom += `
         <input class="small" type="number"
           placeholder="+"
-          onblur="tambahTransaksi(${i},this)">
+          onchange="tambahTransaksi('${key}',this)">
       `;
     }
 
-    let updateClass = d.update == 0 ? "red" : "";
+    let red = d.update == 0 ? "red" : "";
 
     t.innerHTML += `
       <tr>
         <td>${i+1}</td>
         <td>${d.nama}</td>
         <td>${d.stock}</td>
-        <td class="${updateClass}">${d.update}</td>
+        <td class="${red}">${d.update}</td>
         <td>${kolom}</td>
         <td>
-          <button class="del" onclick="hapusData(${i})">🗑️</button>
+          <button class="del" onclick="hapusData('${key}')">🗑️</button>
         </td>
       </tr>
     `;
   });
 
-  simpan();
   hitungTotal();
 }
 
-function tambah(){
+// 🔥 TAMBAH DATA
+window.tambah = function(){
   let nama = document.getElementById("nama").value;
   let stok = parseFloat(document.getElementById("stok").value);
 
-  if(nama && !isNaN(stok)){
-    data.push({
-      nama:nama,
-      stock:stok,
-      update:stok,
-      transaksi:[]
-    });
+  if(!nama || isNaN(stok)) return;
 
-    document.getElementById("nama").value = "";
-    document.getElementById("stok").value = "";
+  const newRef = push(ref(db,"pertalite"));
 
-    render();
-  }
-}
+  set(newRef,{
+    nama:nama,
+    stock:stok,
+    update:stok,
+    transaksi:[]
+  });
 
-function tambahTransaksi(i,input){
+  document.getElementById("nama").value = "";
+  document.getElementById("stok").value = "";
+};
+
+// 🔥 TRANSAKSI
+window.tambahTransaksi = function(key,input){
   let val = parseFloat(input.value);
-
-  if(isNaN(val) || val <= 0) return;
-  if(data[i].update <= 0) return;
-
-  data[i].update -= val;
-  if(data[i].update < 0) data[i].update = 0;
-
-  data[i].transaksi.push(val);
-
-  render();
-}
-
-function edit(i,j,input){
-  let val = parseFloat(input.value);
-
   if(isNaN(val)) return;
 
-  let old = data[i].transaksi[j] || 0;
-  let selisih = val - old;
+  const itemRef = ref(db,"pertalite/"+key);
 
-  data[i].update -= selisih;
+  onValue(itemRef,(snap)=>{
+    let d = snap.val();
 
-  if(data[i].update < 0){
-    data[i].update = 0;
-  }
+    d.update -= val;
+    if(d.update < 0) d.update = 0;
 
-  data[i].transaksi[j] = val;
+    d.transaksi.push(val);
 
-  render();
-}
+    set(itemRef,d);
+  },{onlyOnce:true});
+};
 
-function hapusTransaksi(i,j){
-  let val = data[i].transaksi[j];
+// 🔥 HAPUS TRANSAKSI
+window.hapusTransaksi = function(key,j){
+  const itemRef = ref(db,"pertalite/"+key);
 
-  data[i].update += val;
+  onValue(itemRef,(snap)=>{
+    let d = snap.val();
 
-  data[i].transaksi.splice(j,1);
+    let val = d.transaksi[j];
 
-  render();
-}
+    d.update += val;
+    d.transaksi.splice(j,1);
 
-function hapusData(i){
-  if(confirm("Hapus data ini?")){
-    data.splice(i,1);
-    render();
-  }
-}
+    set(itemRef,d);
+  },{onlyOnce:true});
+};
 
-render();
+// 🔥 HAPUS DATA
+window.hapusData = function(key){
+  remove(ref(db,"pertalite/"+key));
+};
+
+// 🔥 EDIT
+window.edit = function(key,j,input){
+  let val = parseFloat(input.value);
+
+  const itemRef = ref(db,"pertalite/"+key);
+
+  onValue(itemRef,(snap)=>{
+    let d = snap.val();
+
+    let old = d.transaksi[j];
+    let selisih = val - old;
+
+    d.update -= selisih;
+    if(d.update < 0) d.update = 0;
+
+    d.transaksi[j] = val;
+
+    set(itemRef,d);
+  },{onlyOnce:true});
+};
+
 </script>
 
 </body>
