@@ -23,6 +23,14 @@ input {
 #nama { width: 50%; }
 #liter { width: 20%; }
 
+button {
+  padding: 6px;
+  cursor: pointer;
+}
+
+.add { background: blue; color: white; }
+.logout { background: red; color: white; }
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -34,19 +42,21 @@ th, td {
   text-align: center;
 }
 
-button {
-  padding: 6px;
-  cursor: pointer;
+/* 🔥 HIGHLIGHT CEKLIS */
+.row-checked {
+  background: rgba(0, 255, 120, 0.18);
 }
 
-.add { background: blue; color: white; }
-.logout { background: red; color: white; }
+.row-unchecked {
+  background: transparent;
+}
 
 .lock-on {
   color: #00ff7f;
   font-weight: bold;
   cursor: pointer;
 }
+
 .lock-off {
   color: #ff4d4d;
   font-weight: bold;
@@ -168,11 +178,10 @@ window.loadData = async function() {
     let lockClass = data.dexLock ? "lock-on" : "lock-off";
 
     html += `
-      <tr>
+      <tr class="${data.ceklis ? 'row-checked' : 'row-unchecked'}">
         <td>${data.nama}</td>
         <td>${data.liter}</td>
 
-        <!-- DEX FIX -->
         <td>
           <input type="checkbox"
             ${data.dexlite ? "checked" : ""}
@@ -189,7 +198,6 @@ window.loadData = async function() {
           }
         </td>
 
-        <!-- CEKLIS -->
         <td>
           <input type="checkbox"
             ${data.ceklis ? "checked" : ""}
@@ -213,16 +221,13 @@ window.loadData = async function() {
   document.getElementById("totalDex").innerText = totalDex.toLocaleString("id-ID");
 }
 
-// ================== DEXLITE FIX (ANTI BYPASS) ==================
+// ================== DEX ==================
 window.toggleDexlite = async function(id, status){
 
   const snap = await getDoc(doc(db,"drum2",id));
   const data = snap.data();
 
-  // ❌ kalau di-lock admin → STOP
   if(data.dexLock) return;
-
-  // ❌ admin tidak boleh ceklis
   if(role !== "user") return;
 
   await updateDoc(doc(db,"drum2",id),{
