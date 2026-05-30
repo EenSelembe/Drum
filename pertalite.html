@@ -34,6 +34,7 @@ button{
   background:green;
   color:white;
   border:none;
+  cursor:pointer;
 }
 
 table{
@@ -127,13 +128,13 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🔥 ROLE FIX (ANTI BUG LOGIN)
-let role = sessionStorage.getItem("role");
+// 🔥 FIX PENTING: PAKAI LOCALSTORAGE
+let role = localStorage.getItem("role");
 
 console.log("ROLE:", role);
 
-// fallback safety
-if(!role || role === "null"){
+// kalau tidak ada role
+if(!role){
   alert("Silakan login dulu");
   window.location.href = "index.html";
 }
@@ -141,7 +142,7 @@ if(!role || role === "null"){
 // tampil role
 document.getElementById("roleText").innerText = role.toUpperCase();
 
-// 🔥 ADMIN FORM
+// 🔥 FORM ADMIN
 if(role === "admin"){
   document.getElementById("adminForm").innerHTML = `
     <h3>Tambah Data (ADMIN)</h3>
@@ -158,7 +159,7 @@ onValue(ref(db,"pertalite"), snap=>{
   render();
 });
 
-// 🔥 TOTAL
+// 🔥 TOTAL HITUNG
 function hitungTotal(){
   let total = 0;
 
