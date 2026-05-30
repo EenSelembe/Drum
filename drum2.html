@@ -42,6 +42,22 @@ th, td {
   text-align: center;
 }
 
+/* 🔥 WARNA KOLOM SAJA */
+td.dex-active {
+  background: #66ff66; /* hijau stabilo */
+  color: #000;
+}
+
+td.solar-active {
+  background: #ffb84d; /* orange stabilo */
+  color: #000;
+}
+
+/* animasi halus */
+td {
+  transition: 0.3s;
+}
+
 .lock-on {
   color: red;
   font-weight: bold;
@@ -68,22 +84,6 @@ input[type="checkbox"] {
   accent-color: blue;
   transform: scale(1.2);
   cursor: pointer;
-}
-
-/* 🔥 WARNA STABILO */
-tr.dex-row {
-  background: #66ff66; /* hijau stabilo */
-  color: #000;
-}
-
-tr.solar-row {
-  background: #ffb84d; /* orange stabilo */
-  color: #000;
-}
-
-/* animasi halus */
-tr {
-  transition: 0.3s;
 }
 </style>
 </head>
@@ -192,20 +192,13 @@ window.loadData = async function() {
     let lockText = data.dexLock ? "LOCK" : "OPEN";
     let lockClass = data.dexLock ? "lock-on" : "lock-off";
 
-    // 🔥 PRIORITAS WARNA
-    let rowClass = "";
-    if(data.dexlite){
-      rowClass = "dex-row";
-    } else if(data.ceklis){
-      rowClass = "solar-row";
-    }
-
     html += `
-      <tr class="${rowClass}">
+      <tr>
         <td>${data.nama}</td>
         <td>${data.liter}</td>
 
-        <td>
+        <!-- DEX -->
+        <td class="${data.dexlite ? 'dex-active' : ''}">
           <input type="checkbox"
             ${data.dexlite ? "checked" : ""}
             ${(role !== "user" || data.dexLock) ? "disabled" : ""}
@@ -221,7 +214,8 @@ window.loadData = async function() {
           }
         </td>
 
-        <td>
+        <!-- SOLAR -->
+        <td class="${data.ceklis ? 'solar-active' : ''}">
           <input type="checkbox"
             ${data.ceklis ? "checked" : ""}
             ${role === "admin" ? "disabled" : ""}
