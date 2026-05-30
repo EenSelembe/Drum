@@ -23,6 +23,12 @@ input {
 #nama { width: 50%; }
 #liter { width: 20%; }
 
+button {
+  padding: 8px 10px;
+  margin: 5px;
+  cursor: pointer;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -34,12 +40,9 @@ th, td {
   text-align: center;
 }
 
-button {
-  padding: 6px;
-  cursor: pointer;
-}
-
 .copy { background: green; color: white; }
+
+.add { background: blue; color: white; }
 
 .lock-on {
   color: #00ff7f;
@@ -68,9 +71,12 @@ button {
 <input type="text" id="nama" placeholder="Nama">
 <input type="number" id="liter" placeholder="Liter">
 
+<!-- 🔥 TOMBOL TAMBAH DATA -->
+<button class="add" onclick="tambahData()">Tambah Data</button>
+
 <div class="copy" onclick="copyData()">Copy</div>
 
-<!-- 🔥 TOTAL BALIK LAGI -->
+<!-- TOTAL -->
 <div class="total-box">
   Total Semua: <span id="totalSemua">0</span> Rp<br>
   Total ✔: <span id="totalCeklis">0</span> L<br>
@@ -104,7 +110,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 // ================== MODE ==================
-const role = "admin";
+const role = "admin"; // admin / user
 
 // ================== FIREBASE ==================
 const firebaseConfig = {
@@ -119,7 +125,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ================== TAMBAH ==================
+// ================== TAMBAH DATA ==================
 window.tambahData = async function() {
   const nama = document.getElementById("nama").value.toUpperCase();
   const liter = parseFloat(document.getElementById("liter").value);
@@ -134,10 +140,13 @@ window.tambahData = async function() {
     dexLock: false
   });
 
+  document.getElementById("nama").value = "";
+  document.getElementById("liter").value = "";
+
   loadData();
 }
 
-// ================== LOAD + TOTAL ==================
+// ================== LOAD ==================
 window.loadData = async function() {
   const snap = await getDocs(collection(db, "drum2"));
   let html = "";
@@ -193,14 +202,12 @@ window.loadData = async function() {
 
   document.getElementById("tbody").innerHTML = html;
 
-  // 🔥 HITUNG TOTAL
   let totalSemua = (totalCeklis * 6800) + totalDex;
 
   document.getElementById("totalSemua").innerText =
     totalSemua.toLocaleString("id-ID");
 
-  document.getElementById("totalCeklis").innerText =
-    totalCeklis;
+  document.getElementById("totalCeklis").innerText = totalCeklis;
 
   document.getElementById("totalDex").innerText =
     totalDex.toLocaleString("id-ID");
