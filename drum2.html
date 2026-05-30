@@ -1,263 +1,302 @@
-<!DOCTYPE html>  <html lang="id">  
-<head>  
-<meta charset="UTF-8">  
-<title>UMUM</title>  <style>  
-body {  
-  font-family: Arial;  
-  background: #111;  
-  color: #fff;  
-  padding: 10px;  
-}  
-  
-h2 { text-align: center; }  
-  
-input {  
-  padding: 10px;  
-  margin: 5px;  
-  font-size: 16px;  
-}  
-  
-#nama { width: 50%; }  
-#liter { width: 20%; }  
-  
-button {  
-  padding: 6px;  
-  cursor: pointer;  
-}  
-  
-.add { background: blue; color: white; }  
-.logout { background: red; color: white; }  
-  
-table {  
-  width: 100%;  
-  border-collapse: collapse;  
-}  
-  
-th, td {  
-  border: 1px solid #555;  
-  padding: 8px;  
-  text-align: center;  
-}  
-  
-.lock-on {  
-  color: red;  
-  font-weight: bold;  
-  cursor: pointer;  
-}  
-  
-.lock-off {  
-  color: blue ;  
-  font-weight: bold;  
-  cursor: pointer;  
-}  
-  
-.total-box {  
-  margin: 10px 0;  
-  padding: 10px;  
-  background: #222;  
-  border: 1px solid #555;  
-}  
-  
-/* 🔵 CEKLIS JELAS + BESAR */  
-input[type="checkbox"] {  
-  width: 22px;  
-  height: 22px;  
-  accent-color: blue;  
-  transform: scale(1.2);  
-  cursor: pointer;  
-}  
-  
-/* efek kalau sudah dicentang */  
-input[type="checkbox"]: {  
-  background : 0 0 9px #ffd700;  
-}  
-</style>  </head>  <body>  <h2>DATA UMUM</h2>  <button class="logout" onclick="logout()">Logout</button>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>UMUM</title>
 
-<br>  <input type="text" id="nama" placeholder="Nama">  
-<input type="number" id="liter" placeholder="Liter">  <button class="add" onclick="tambahData()">Tambah Data</button>
+<style>
+body {
+  font-family: Arial;
+  background: #111;
+  color: #fff;
+  padding: 10px;
+}
 
-<div class="total-box">  
-  Total Semua: <span id="totalSemua">0</span> Rp<br>  
-  Total ✔: <span id="totalCeklis">0</span> L<br>  
-  Total DEXLITE: <span id="totalDex">0</span> Rp  
-</div>  <table>  
-<thead>  
-<tr>  
-<th>Nama</th>  
-<th>Liter</th>  
-<th>DEX</th>  
-<th>SOLAR</th>  
-<th>Aksi</th>  
-</tr>  
-</thead>  <tbody id="tbody"></tbody>  
-</table>  <script type="module">  
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";  
-import {  
-  getFirestore,  
-  collection,  
-  addDoc,  
-  getDocs,  
-  deleteDoc,  
-  doc,  
-  updateDoc,  
-  getDoc  
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";  
-  
-  
-// ================== ROLE ==================  
-const role = localStorage.getItem("role") || "user";  
-  
-if(!localStorage.getItem("role")){  
-  alert("Silakan login dulu!");  
-  location.href = "index.html";  
-}  
-  
-// ================== FIREBASE ==================  
-const firebaseConfig = {  
-  apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",  
-  authDomain: "drum-26d1c.firebaseapp.com",  
-  projectId: "drum-26d1c",  
-  storageBucket: "drum-26d1c.appspot.com",  
-  messagingSenderId: "960892789351",  
-  appId: "1:960892789351:web:ca1c653c85cab59586eac2"  
-};  
-  
-const app = initializeApp(firebaseConfig);  
-const db = getFirestore(app);  
-  
-// ================== TAMBAH ==================  
-window.tambahData = async function() {  
-  if(role !== "admin") return;  
-  
-  const nama = document.getElementById("nama").value.toUpperCase();  
-  const liter = parseFloat(document.getElementById("liter").value);  
-  
-  if(!nama || !liter) return alert("Isi semua!");  
-  
-  await addDoc(collection(db, "drum2"), {  
-    nama,  
-    liter,  
-    ceklis: false,  
-    dexlite: false,  
-    dexLock: false  
-  });  
-  
-  loadData();  
-}  
-  
-// ================== LOAD ==================  
-window.loadData = async function() {  
-  const snap = await getDocs(collection(db, "drum2"));  
-  
-  let html = "";  
-  let totalCeklis = 0;  
-  let totalDex = 0;  
-  
-  snap.forEach((d) => {  
-    const data = d.data();  
-  
-    if(data.ceklis) totalCeklis += data.liter;  
-    if(data.dexlite) totalDex += 50000;  
-  
-    let lockText = data.dexLock ? "LOCK" : "OPEN";  
-    let lockClass = data.dexLock ? "lock-on" : "lock-off";  
-  
-    html += `  
-      <tr>  
-        <td>${data.nama}</td>  
-        <td>${data.liter}</td>  
-  
-        <td>  
-          <input type="checkbox"  
-            ${data.dexlite ? "checked" : ""}  
-            ${(role !== "user" || data.dexLock) ? "disabled" : ""}  
-            onchange="toggleDexlite('${d.id}', this.checked)">  
-  
-          ${  
-            role === "admin"  
-              ? `<span onclick="toggleLock('${d.id}', ${data.dexLock})"  
-                        class="${lockClass}">  
-                  ${lockText}  
-                </span>`  
-              : ""  
-          }  
-        </td>  
-  
-        <td>  
-          <input type="checkbox"  
-            ${data.ceklis ? "checked" : ""}  
-            ${role === "admin" ? "disabled" : ""}  
-            onchange="toggleCeklis('${d.id}', this.checked)">  
-        </td>  
-  
-        <td>  
-          ${role === "admin" ? `<button onclick="hapusData('${d.id}')">Hapus</button>` : ""}  
-        </td>  
-      </tr>  
-    `;  
-  });  
-  
-  document.getElementById("tbody").innerHTML = html;  
-  
-  let totalSemua = (totalCeklis * 6800) + totalDex;  
-  
-  document.getElementById("totalSemua").innerText = totalSemua.toLocaleString("id-ID");  
-  document.getElementById("totalCeklis").innerText = totalCeklis;  
-  document.getElementById("totalDex").innerText = totalDex.toLocaleString("id-ID");  
-}  
-  
-// ================== DEX ==================  
-window.toggleDexlite = async function(id, status){  
-  
-  const snap = await getDoc(doc(db,"drum2",id));  
-  const data = snap.data();  
-  
-  if(data.dexLock) return;  
-  if(role !== "user") return;  
-  
-  await updateDoc(doc(db,"drum2",id),{  
-    dexlite: status  
-  });  
-  
-  loadData();  
-}  
-  
-// ================== LOCK ==================  
-window.toggleLock = async function(id, current){  
-  if(role !== "admin") return;  
-  
-  await updateDoc(doc(db,"drum2",id),{  
-    dexLock: !current  
-  });  
-  
-  loadData();  
-}  
-  
-// ================== CEKLIS ==================  
-window.toggleCeklis = async function(id, status){  
-  if(role !== "user") return;  
-  
-  await updateDoc(doc(db,"drum2",id),{  
-    ceklis: status  
-  });  
-  
-  loadData();  
-}  
-  
-// ================== DELETE ==================  
-window.hapusData = async function(id){  
-  if(role !== "admin") return;  
-  
-  await deleteDoc(doc(db,"drum2",id));  
-  loadData();  
-}  
-  
-// ================== LOGOUT ==================  
-window.logout = function(){  
-  localStorage.removeItem("role");  
-  location.href = "index.html";  
-}  
-  
-loadData();  
-</script>  </body>  
-</html>  
+h2 { text-align: center; }
+
+input {
+  padding: 10px;
+  margin: 5px;
+  font-size: 16px;
+}
+
+#nama { width: 50%; }
+#liter { width: 20%; }
+
+button {
+  padding: 6px;
+  cursor: pointer;
+}
+
+.add { background: blue; color: white; }
+.logout { background: red; color: white; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #555;
+  padding: 8px;
+  text-align: center;
+}
+
+.lock-on {
+  color: red;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.lock-off {
+  color: blue;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.total-box {
+  margin: 10px 0;
+  padding: 10px;
+  background: #222;
+  border: 1px solid #555;
+}
+
+/* checkbox */
+input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: blue;
+  transform: scale(1.2);
+  cursor: pointer;
+}
+
+/* 🔥 WARNA STABILO */
+tr.dex-row {
+  background: #66ff66; /* hijau stabilo */
+  color: #000;
+}
+
+tr.solar-row {
+  background: #ffb84d; /* orange stabilo */
+  color: #000;
+}
+
+/* animasi halus */
+tr {
+  transition: 0.3s;
+}
+</style>
+</head>
+
+<body>
+
+<h2>DATA UMUM</h2>
+
+<button class="logout" onclick="logout()">Logout</button>
+
+<br>
+
+<input type="text" id="nama" placeholder="Nama">
+<input type="number" id="liter" placeholder="Liter">
+
+<button class="add" onclick="tambahData()">Tambah Data</button>
+
+<div class="total-box">
+  Total Semua: <span id="totalSemua">0</span> Rp<br>
+  Total ✔: <span id="totalCeklis">0</span> L<br>
+  Total DEXLITE: <span id="totalDex">0</span> Rp
+</div>
+
+<table>
+<thead>
+<tr>
+<th>Nama</th>
+<th>Liter</th>
+<th>DEX</th>
+<th>SOLAR</th>
+<th>Aksi</th>
+</tr>
+</thead>
+
+<tbody id="tbody"></tbody>
+</table>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+// ROLE
+const role = localStorage.getItem("role") || "user";
+
+if(!localStorage.getItem("role")){
+  alert("Silakan login dulu!");
+  location.href = "index.html";
+}
+
+// FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
+  authDomain: "drum-26d1c.firebaseapp.com",
+  projectId: "drum-26d1c",
+  storageBucket: "drum-26d1c.appspot.com",
+  messagingSenderId: "960892789351",
+  appId: "1:960892789351:web:ca1c653c85cab59586eac2"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// TAMBAH
+window.tambahData = async function() {
+  if(role !== "admin") return;
+
+  const nama = document.getElementById("nama").value.toUpperCase();
+  const liter = parseFloat(document.getElementById("liter").value);
+
+  if(!nama || !liter) return alert("Isi semua!");
+
+  await addDoc(collection(db, "drum2"), {
+    nama,
+    liter,
+    ceklis: false,
+    dexlite: false,
+    dexLock: false
+  });
+
+  loadData();
+}
+
+// LOAD
+window.loadData = async function() {
+  const snap = await getDocs(collection(db, "drum2"));
+
+  let html = "";
+  let totalCeklis = 0;
+  let totalDex = 0;
+
+  snap.forEach((d) => {
+    const data = d.data();
+
+    if(data.ceklis) totalCeklis += data.liter;
+    if(data.dexlite) totalDex += 50000;
+
+    let lockText = data.dexLock ? "LOCK" : "OPEN";
+    let lockClass = data.dexLock ? "lock-on" : "lock-off";
+
+    // 🔥 PRIORITAS WARNA
+    let rowClass = "";
+    if(data.dexlite){
+      rowClass = "dex-row";
+    } else if(data.ceklis){
+      rowClass = "solar-row";
+    }
+
+    html += `
+      <tr class="${rowClass}">
+        <td>${data.nama}</td>
+        <td>${data.liter}</td>
+
+        <td>
+          <input type="checkbox"
+            ${data.dexlite ? "checked" : ""}
+            ${(role !== "user" || data.dexLock) ? "disabled" : ""}
+            onchange="toggleDexlite('${d.id}', this.checked)">
+
+          ${
+            role === "admin"
+              ? `<span onclick="toggleLock('${d.id}', ${data.dexLock})"
+                        class="${lockClass}">
+                  ${lockText}
+                </span>`
+              : ""
+          }
+        </td>
+
+        <td>
+          <input type="checkbox"
+            ${data.ceklis ? "checked" : ""}
+            ${role === "admin" ? "disabled" : ""}
+            onchange="toggleCeklis('${d.id}', this.checked)">
+        </td>
+
+        <td>
+          ${role === "admin" ? `<button onclick="hapusData('${d.id}')">Hapus</button>` : ""}
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("tbody").innerHTML = html;
+
+  let totalSemua = (totalCeklis * 6800) + totalDex;
+
+  document.getElementById("totalSemua").innerText = totalSemua.toLocaleString("id-ID");
+  document.getElementById("totalCeklis").innerText = totalCeklis;
+  document.getElementById("totalDex").innerText = totalDex.toLocaleString("id-ID");
+}
+
+// DEX
+window.toggleDexlite = async function(id, status){
+  const snap = await getDoc(doc(db,"drum2",id));
+  const data = snap.data();
+
+  if(data.dexLock) return;
+  if(role !== "user") return;
+
+  await updateDoc(doc(db,"drum2",id),{
+    dexlite: status
+  });
+
+  loadData();
+}
+
+// LOCK
+window.toggleLock = async function(id, current){
+  if(role !== "admin") return;
+
+  await updateDoc(doc(db,"drum2",id),{
+    dexLock: !current
+  });
+
+  loadData();
+}
+
+// CEKLIS
+window.toggleCeklis = async function(id, status){
+  if(role !== "user") return;
+
+  await updateDoc(doc(db,"drum2",id),{
+    ceklis: status
+  });
+
+  loadData();
+}
+
+// DELETE
+window.hapusData = async function(id){
+  if(role !== "admin") return;
+
+  await deleteDoc(doc(db,"drum2",id));
+  loadData();
+}
+
+// LOGOUT
+window.logout = function(){
+  localStorage.removeItem("role");
+  location.href = "index.html";
+}
+
+loadData();
+</script>
+
+</body>
+</html>
