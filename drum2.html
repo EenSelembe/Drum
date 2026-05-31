@@ -15,13 +15,13 @@ body {
 h2 { text-align: center; }
 
 input {
-  padding: 8px;
-  margin: 5px;
+  padding: 6px;
+  margin: 4px;
   font-size: 14px;
 }
 
 #nama { width: 50%; }
-#liter { width: 120px; } /* DIPERKECIL */
+#liter { width: 90px; } /* DIPERKECIL */
 
 button {
   padding: 6px;
@@ -34,6 +34,7 @@ button {
 table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 10px;
 }
 
 th, td {
@@ -42,18 +43,21 @@ th, td {
   text-align: center;
 }
 
-/* KHUSUS KOLOM LITER */
-td:nth-child(3), th:nth-child(3) {
+/* Kolom nomor */
+th:nth-child(1), td:nth-child(1) {
+  width: 40px;
+}
+
+/* Kolom liter */
+th:nth-child(4), td:nth-child(4) {
   width: 90px;
 }
 
-/* INPUT LITER DI TABEL */
 td input[type="number"] {
-  width: 70px;
-  padding: 4px;
-  font-size: 13px;
+  width: 60px;
 }
 
+/* Warna */
 .dex-checked {
   background: #00ff99;
   color: black;
@@ -66,11 +70,7 @@ td input[type="number"] {
   font-weight: bold;
 }
 
-input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-}
-
+/* POPUP */
 .popup {
   position: fixed;
   top: 0;
@@ -90,243 +90,134 @@ input[type="checkbox"] {
   text-align: center;
 }
 
-.popup-box button {
-  padding: 8px 15px;
+.popup button {
   margin: 5px;
-  border: none;
-  cursor: pointer;
 }
-
-.yes { background: limegreen; }
-.no { background: red; color: white; }
-
 </style>
 </head>
 
 <body>
 
-<h2>DATA UMUM</h2>
-
-<button class="logout" onclick="logout()">Logout</button>
-
-<br>
+<h2>DATA BBM</h2>
 
 <input type="text" id="nama" placeholder="Nama">
 <input type="number" id="liter" placeholder="Liter">
-
-<button class="add" onclick="tambahData()">Tambah Data</button>
+<button class="add" onclick="tambahData()">Tambah</button>
 
 <table>
 <thead>
 <tr>
-<th>No</th>
-<th>Nama</th>
-<th>Liter</th>
-<th>DEX</th>
-<th>SOLAR</th>
-<th>Aksi</th>
+  <th>No</th>
+  <th>Nama</th>
+  <th>Solar</th>
+  <th>Liter</th>
+  <th>Dexlite</th>
+  <th>Aksi</th>
 </tr>
 </thead>
-
-<tbody id="tbody"></tbody>
+<tbody id="tabel"></tbody>
 </table>
 
-<div id="popup" class="popup">
-  <div class="popup-box" onclick="event.stopPropagation()">
-    <p id="popupText"></p>
-    <button class="yes" onclick="jawabPopup(true)">YA</button>
-    <button class="no" onclick="jawabPopup(false)">BELUM</button>
+<!-- POPUP -->
+<div class="popup" id="popup">
+  <div class="popup-box">
+    <p id="popupText">Yakin?</p>
+    <button onclick="confirmAksi()">Ya</button>
+    <button onclick="closePopup()">Batal</button>
   </div>
 </div>
 
-<script type="module">
+<script>
+let data = JSON.parse(localStorage.getItem("bbm")) || [];
+let indexAksi = null;
+let tipeAksi = "";
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  deleteDoc,
-  doc,
-  updateDoc,
-  getDoc
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+function simpan() {
+  localStorage.setItem("bbm", JSON.stringify(data));
+}
 
-const role = localStorage.getItem("role") || "user";
+function render() {
+  const tabel = document.getElementById("tabel");
+  tabel.innerHTML = "";
 
-const firebaseConfig = {
-  apiKey: "ISI PUNYA ANDA",
-  authDomain: "ISI",
-  projectId: "ISI",
-};
+  data.forEach((d, i) => {
+    let tr = document.createElement("tr");
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+    if (d.dex) tr.classList.add("dex-checked");
+    if (d.solar) tr.classList.add("solar-checked");
 
-let selectedId = null;
-let selectedStatus = null;
-let modeCeklis = "";
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${d.nama}</td>
+      <td><input type="checkbox" ${d.solar ? "checked" : ""} onchange="cekAksi(${i}, 'solar', this.checked)"></td>
+      <td><input type="number" value="${d.liter}" onchange="editLiter(${i}, this.value)"></td>
+      <td><input type="checkbox" ${d.dex ? "checked" : ""} onchange="cekAksi(${i}, 'dex', this.checked)"></td>
+      <td><button onclick="hapus(${i})">Hapus</button></td>
+    `;
 
-/* TAMBAH */
-window.tambahData = async function() {
+    tabel.appendChild(tr);
+  });
+}
 
-  if(role !== "admin") return;
+function tambahData() {
+  let nama = document.getElementById("nama").value;
+  let liter = document.getElementById("liter").value;
 
-  const nama = document.getElementById("nama").value.toUpperCase();
-  const liter = parseFloat(document.getElementById("liter").value);
+  if (!nama || !liter) return alert("Isi dulu!");
 
-  if(!nama || !liter) return alert("Isi semua!");
-
-  await addDoc(collection(db, "drum2"), {
+  data.push({
     nama,
     liter,
-    ceklis: false,
-    dexlite: false,
-    dexLock: liter < 100
+    solar: false,
+    dex: false
   });
 
-  loadData();
+  simpan();
+  render();
+
+  document.getElementById("nama").value = "";
+  document.getElementById("liter").value = "";
 }
 
-/* LOAD */
-window.loadData = async function() {
-
-  const snap = await getDocs(collection(db, "drum2"));
-  let html = "";
-  let no = 1;
-
-  snap.forEach((d) => {
-
-    const data = d.data();
-
-    html += `
-    <tr>
-      <td>${no++}</td>
-      <td>${data.nama}</td>
-
-      <td>
-        ${
-          role === "admin"
-          ? `<input type="number" value="${data.liter}" onchange="updateLiter('${d.id}', this.value)">`
-          : data.liter
-        }
-      </td>
-
-      <td class="${data.dexlite ? "dex-checked" : ""}">
-        <input type="checkbox"
-          ${data.dexlite ? "checked" : ""}
-          ${(role !== "user" || data.dexLock) ? "disabled" : ""}
-          onchange="toggleDexlite('${d.id}', this.checked)">
-      </td>
-
-      <td class="${data.ceklis ? "solar-checked" : ""}">
-        <input type="checkbox"
-          ${data.ceklis ? "checked" : ""}
-          ${role === "admin" ? "disabled" : ""}
-          onchange="toggleCeklis('${d.id}', this.checked)">
-      </td>
-
-      <td>
-        ${role === "admin" ? `<button onclick="hapusData('${d.id}')">Hapus</button>` : ""}
-      </td>
-    </tr>
-    `;
-  });
-
-  document.getElementById("tbody").innerHTML = html;
+function editLiter(i, val) {
+  data[i].liter = val;
+  simpan();
 }
 
-/* UPDATE LITER */
-window.updateLiter = async function(id, value){
-
-  if(role !== "admin") return;
-
-  const liter = parseFloat(value);
-  if(!liter) return alert("Liter tidak valid");
-
-  await updateDoc(doc(db,"drum2",id),{
-    liter: liter,
-    dexLock: liter < 100
-  });
-
-  loadData();
+function hapus(i) {
+  data.splice(i, 1);
+  simpan();
+  render();
 }
 
-/* DEX */
-window.toggleDexlite = async function(id, status){
-
-  const snap = await getDoc(doc(db,"drum2",id));
-  const data = snap.data();
-
-  if(data.dexLock) return;
-  if(role !== "user") return;
-
-  selectedId = id;
-  selectedStatus = status;
-  modeCeklis = "dex";
+function cekAksi(i, tipe, status) {
+  indexAksi = i;
+  tipeAksi = tipe;
 
   document.getElementById("popupText").innerText =
-    status ? "Apakah DEX sudah terisi?" : "Yakin mau lepas ceklis DEX?";
+    status ? "Yakin mau ceklis?" : "Yakin mau lepas ceklis?";
 
   document.getElementById("popup").style.display = "flex";
+
+  // simpan sementara
+  data[i]["temp_" + tipe] = status;
 }
 
-/* SOLAR */
-window.toggleCeklis = function(id, status){
+function confirmAksi() {
+  data[indexAksi][tipeAksi] = data[indexAksi]["temp_" + tipeAksi];
+  delete data[indexAksi]["temp_" + tipeAksi];
 
-  if(role !== "user") return;
-
-  selectedId = id;
-  selectedStatus = status;
-  modeCeklis = "solar";
-
-  document.getElementById("popupText").innerText =
-    status ? "Apakah SOLAR sudah terisi?" : "Yakin mau lepas ceklis SOLAR?";
-
-  document.getElementById("popup").style.display = "flex";
+  simpan();
+  render();
+  closePopup();
 }
 
-/* POPUP */
-window.jawabPopup = async function(jawab){
-
+function closePopup() {
   document.getElementById("popup").style.display = "none";
-
-  if(!jawab){
-    loadData();
-    return;
-  }
-
-  if(modeCeklis === "dex"){
-    await updateDoc(doc(db,"drum2",selectedId),{
-      dexlite: selectedStatus
-    });
-  } else {
-    await updateDoc(doc(db,"drum2",selectedId),{
-      ceklis: selectedStatus
-    });
-  }
-
-  loadData();
 }
 
-/* LOCK */
-window.hapusData = async function(id){
-
-  if(role !== "admin") return;
-
-  await deleteDoc(doc(db,"drum2",id));
-  loadData();
-}
-
-/* LOGOUT */
-window.logout = function(){
-  localStorage.removeItem("role");
-  location.href = "index.html";
-}
-
-loadData();
-
+render();
 </script>
+
 </body>
 </html>
