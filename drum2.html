@@ -42,10 +42,6 @@ th, td {
   text-align: center;
 }
 
-.lock-on { color: red; font-weight: bold; cursor: pointer; }
-.lock-off { color: cyan; font-weight: bold; cursor: pointer; }
-
-/* 🔥 WARNA KOLOM */
 .dex-checked {
   background: #00ff99;
   color: black;
@@ -58,13 +54,11 @@ th, td {
   font-weight: bold;
 }
 
-/* checkbox */
 input[type="checkbox"] {
   width: 20px;
   height: 20px;
 }
 
-/* 🔥 POPUP */
 .popup {
   position: fixed;
   top: 0;
@@ -113,6 +107,7 @@ input[type="checkbox"] {
 <table>
 <thead>
 <tr>
+<th>No</th>
 <th>Nama</th>
 <th>Liter</th>
 <th>DEX</th>
@@ -124,7 +119,7 @@ input[type="checkbox"] {
 <tbody id="tbody"></tbody>
 </table>
 
-<!-- 🔥 POPUP -->
+<!-- POPUP -->
 <div id="popup" class="popup">
   <div class="popup-box" onclick="event.stopPropagation()">
     <p id="popupText">Pertanyaan</p>
@@ -149,7 +144,6 @@ import {
 
 const role = localStorage.getItem("role") || "user";
 
-/* 🔥 CONFIG ASLI */
 const firebaseConfig = {
   apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
   authDomain: "drum-26d1c.firebaseapp.com",
@@ -162,12 +156,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* GLOBAL */
 let selectedId = null;
 let selectedStatus = null;
 let modeCeklis = "";
 
-/* ================= TAMBAH ================= */
+/* TAMBAH */
 window.tambahData = async function() {
 
   if(role !== "admin") return;
@@ -188,11 +181,12 @@ window.tambahData = async function() {
   loadData();
 }
 
-/* ================= LOAD ================= */
+/* LOAD */
 window.loadData = async function() {
 
   const snap = await getDocs(collection(db, "drum2"));
   let html = "";
+  let no = 1;
 
   snap.forEach((d) => {
 
@@ -203,6 +197,7 @@ window.loadData = async function() {
 
     html += `
     <tr>
+      <td>${no++}</td>
       <td>${data.nama}</td>
       <td>${data.liter}</td>
 
@@ -238,7 +233,7 @@ window.loadData = async function() {
   document.getElementById("tbody").innerHTML = html;
 }
 
-/* ================= DEX ================= */
+/* DEX */
 window.toggleDexlite = async function(id, status){
 
   const snap = await getDoc(doc(db,"drum2",id));
@@ -257,7 +252,7 @@ window.toggleDexlite = async function(id, status){
   document.getElementById("popup").style.display = "flex";
 }
 
-/* ================= SOLAR ================= */
+/* SOLAR */
 window.toggleCeklis = function(id, status){
 
   if(role !== "user") return;
@@ -272,7 +267,7 @@ window.toggleCeklis = function(id, status){
   document.getElementById("popup").style.display = "flex";
 }
 
-/* ================= POPUP ================= */
+/* POPUP */
 window.jawabPopup = async function(jawab){
 
   document.getElementById("popup").style.display = "none";
@@ -295,14 +290,14 @@ window.jawabPopup = async function(jawab){
   loadData();
 }
 
-/* 🔒 BLOK ESC */
+/* BLOCK ESC */
 document.addEventListener("keydown", function(e){
   if(e.key === "Escape"){
     e.preventDefault();
   }
 });
 
-/* ================= LOCK ================= */
+/* LOCK */
 window.toggleLock = async function(id, current){
 
   if(role !== "admin") return;
@@ -314,7 +309,7 @@ window.toggleLock = async function(id, current){
   loadData();
 }
 
-/* ================= DELETE ================= */
+/* DELETE */
 window.hapusData = async function(id){
 
   if(role !== "admin") return;
@@ -323,7 +318,7 @@ window.hapusData = async function(id){
   loadData();
 }
 
-/* ================= LOGOUT ================= */
+/* LOGOUT */
 window.logout = function(){
   localStorage.removeItem("role");
   location.href = "index.html";
