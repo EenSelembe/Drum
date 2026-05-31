@@ -15,13 +15,12 @@ body {
 h2 { text-align: center; }
 
 input {
-  padding: 8px;
+  padding: 6px;
   margin: 5px;
-  font-size: 14px;
 }
 
 #nama { width: 50%; }
-#liter { width: 80px; }
+#liter { width: 70px; }
 
 button {
   padding: 6px;
@@ -44,7 +43,7 @@ th, td {
 
 /* ukuran kolom */
 th:nth-child(1), td:nth-child(1) { width: 40px; }
-th:nth-child(3), td:nth-child(3) { width: 90px; }
+th:nth-child(3), td:nth-child(3) { width: 80px; }
 
 /* warna */
 .dex-active {
@@ -63,9 +62,8 @@ th:nth-child(3), td:nth-child(3) { width: 90px; }
 .lock-off { color: cyan; font-weight: bold; cursor: pointer; }
 
 input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
+  width: 18px;
+  height: 18px;
 }
 </style>
 </head>
@@ -108,9 +106,7 @@ import {
   getDocs,
   deleteDoc,
   doc,
-  updateDoc,
-  query,
-  orderBy
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const role = localStorage.getItem("role") || "user";
@@ -121,9 +117,9 @@ if(!localStorage.getItem("role")){
 }
 
 const firebaseConfig = {
-  apiKey: "xxx",
-  authDomain: "xxx",
-  projectId: "xxx"
+  apiKey: "ISI_API_KEY",
+  authDomain: "ISI_AUTH",
+  projectId: "ISI_PROJECT_ID"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -138,11 +134,7 @@ window.tambahData = async function() {
 
   if(!nama || !liter) return alert("Isi semua!");
 
-  const snap = await getDocs(collection(db, "drum2"));
-  const nomorBaru = snap.size + 1;
-
   await addDoc(collection(db, "drum2"), {
-    no: nomorBaru,
     nama,
     liter,
     ceklis: false,
@@ -156,14 +148,20 @@ window.tambahData = async function() {
 /* LOAD DATA */
 window.loadData = async function() {
 
-  const q = query(collection(db, "drum2"), orderBy("no","asc"));
-  const snap = await getDocs(q);
+  const snap = await getDocs(collection(db, "drum2"));
+
+  let dataArr = [];
+
+  snap.forEach((d)=>{
+    dataArr.push({
+      id: d.id,
+      ...d.data()
+    });
+  });
 
   let html = "";
 
-  snap.forEach((d) => {
-
-    const data = d.data();
+  dataArr.forEach((data, index)=>{
 
     let dexClass = data.dexlite ? "dex-active" : "";
     let solarClass = data.ceklis ? "solar-active" : "";
@@ -173,7 +171,7 @@ window.loadData = async function() {
 
     html += `
     <tr>
-      <td>${data.no}</td>
+      <td>${index + 1}</td>
 
       <td>${data.nama}</td>
 
@@ -181,7 +179,7 @@ window.loadData = async function() {
         ${
           role === "admin"
           ? `<input type="number" value="${data.liter}" style="width:60px"
-              onchange="editLiter('${d.id}', this.value)">`
+              onchange="editLiter('${data.id}', this.value)">`
           : data.liter
         }
       </td>
@@ -190,11 +188,11 @@ window.loadData = async function() {
         <input type="checkbox"
           ${data.dexlite ? "checked" : ""}
           ${(role !== "user" || data.dexLock) ? "disabled" : ""}
-          onchange="toggleDexlite('${d.id}', this.checked)">
+          onchange="toggleDexlite('${data.id}', this.checked)">
 
         ${
           role === "admin"
-          ? `<span onclick="toggleLock('${d.id}', ${data.dexLock})" class="${lockClass}">
+          ? `<span onclick="toggleLock('${data.id}', ${data.dexLock})" class="${lockClass}">
               ${lockText}
             </span>`
           : ""
@@ -205,11 +203,11 @@ window.loadData = async function() {
         <input type="checkbox"
           ${data.ceklis ? "checked" : ""}
           ${role === "admin" ? "disabled" : ""}
-          onchange="toggleCeklis('${d.id}', this.checked)">
+          onchange="toggleCeklis('${data.id}', this.checked)">
       </td>
 
       <td>
-        ${role === "admin" ? `<button onclick="hapusData('${d.id}')">Hapus</button>` : ""}
+        ${role === "admin" ? `<button onclick="hapusData('${data.id}')">Hapus</button>` : ""}
       </td>
     </tr>
     `;
