@@ -1,223 +1,329 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<title>UMUM</title>
-
-<style>
-body {
-  font-family: Arial;
-  background: #111;
-  color: #fff;
-  padding: 10px;
-}
-
-h2 { text-align: center; }
+<!DOCTYPE html>  <html lang="id">    <head>    
+<meta charset="UTF-8">    
+<title>UMUM</title>  <style>    
+body {    
+  font-family: Arial;    
+  background: #111;    
+  color: #fff;    
+  padding: 10px;    
+}    h2 { text-align: center; }
 
 input {
-  padding: 6px;
-  margin: 4px;
-  font-size: 14px;
+padding: 10px;
+margin: 5px;
+font-size: 16px;
 }
 
 #nama { width: 50%; }
-#liter { width: 90px; } /* DIPERKECIL */
+#liter { width: 20%; }
 
 button {
-  padding: 6px;
-  cursor: pointer;
+padding: 6px;
+cursor: pointer;
 }
 
 .add { background: blue; color: white; }
 .logout { background: red; color: white; }
 
 table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
+width: 100%;
+border-collapse: collapse;
 }
 
 th, td {
-  border: 1px solid #555;
-  padding: 6px;
-  text-align: center;
+border: 1px solid #555;
+padding: 8px;
+text-align: center;
 }
 
-/* Kolom nomor */
-th:nth-child(1), td:nth-child(1) {
-  width: 40px;
-}
-
-/* Kolom liter */
-th:nth-child(4), td:nth-child(4) {
-  width: 90px;
-}
-
-td input[type="number"] {
-  width: 60px;
-}
-
-/* Warna */
 .dex-checked {
-  background: #00ff99;
-  color: black;
-  font-weight: bold;
+background: #00ff99;
+color: black;
+font-weight: bold;
 }
 
 .solar-checked {
-  background: orange;
-  color: black;
-  font-weight: bold;
+background: orange;
+color: black;
+font-weight: bold;
 }
 
-/* POPUP */
+input[type="checkbox"] {
+width: 20px;
+height: 20px;
+}
+
 .popup {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: none;
-  justify-content: center;
-  align-items: center;
-  background: rgba(0,0,0,0.7);
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+display: none;
+justify-content: center;
+align-items: center;
+background: rgba(0,0,0,0.7);
 }
 
 .popup-box {
-  background: #222;
-  padding: 20px;
-  border-radius: 10px;
-  text-align: center;
+background: #222;
+padding: 20px;
+border-radius: 10px;
+text-align: center;
 }
 
-.popup button {
-  margin: 5px;
-}
-</style>
-</head>
-
-<body>
-
-<h2>DATA BBM</h2>
-
-<input type="text" id="nama" placeholder="Nama">
-<input type="number" id="liter" placeholder="Liter">
-<button class="add" onclick="tambahData()">Tambah</button>
-
-<table>
-<thead>
-<tr>
-  <th>No</th>
-  <th>Nama</th>
-  <th>Solar</th>
-  <th>Liter</th>
-  <th>Dexlite</th>
-  <th>Aksi</th>
-</tr>
-</thead>
-<tbody id="tabel"></tbody>
-</table>
-
-<!-- POPUP -->
-<div class="popup" id="popup">
-  <div class="popup-box">
-    <p id="popupText">Yakin?</p>
-    <button onclick="confirmAksi()">Ya</button>
-    <button onclick="closePopup()">Batal</button>
-  </div>
-</div>
-
-<script>
-let data = JSON.parse(localStorage.getItem("bbm")) || [];
-let indexAksi = null;
-let tipeAksi = "";
-
-function simpan() {
-  localStorage.setItem("bbm", JSON.stringify(data));
+.popup-box button {
+padding: 8px 15px;
+margin: 5px;
+border: none;
+cursor: pointer;
 }
 
-function render() {
-  const tabel = document.getElementById("tabel");
-  tabel.innerHTML = "";
+.yes { background: limegreen; }
+.no { background: red; color: white; }
 
-  data.forEach((d, i) => {
-    let tr = document.createElement("tr");
+</style>  </head>  <body>  <h2>DATA UMUM</h2>  <button class="logout" onclick="logout()">Logout</button>
 
-    if (d.dex) tr.classList.add("dex-checked");
-    if (d.solar) tr.classList.add("solar-checked");
+<br>  <input type="text" id="nama" placeholder="Nama">
+<input type="number" id="liter" placeholder="Liter">  <button class="add" onclick="tambahData()">Tambah Data</button>
 
-    tr.innerHTML = `
-      <td>${i + 1}</td>
-      <td>${d.nama}</td>
-      <td><input type="checkbox" ${d.solar ? "checked" : ""} onchange="cekAksi(${i}, 'solar', this.checked)"></td>
-      <td><input type="number" value="${d.liter}" onchange="editLiter(${i}, this.value)"></td>
-      <td><input type="checkbox" ${d.dex ? "checked" : ""} onchange="cekAksi(${i}, 'dex', this.checked)"></td>
-      <td><button onclick="hapus(${i})">Hapus</button></td>
-    `;
+<table>    
+<thead>    
+<tr>    
+<th>No</th>    
+<th>Nama</th>    
+<th>Liter</th>    
+<th>DEX</th>    
+<th>SOLAR</th>    
+<th>Aksi</th>    
+</tr>    
+</thead>  <tbody id="tbody"></tbody>    
+</table>  <div id="popup" class="popup">    
+  <div class="popup-box" onclick="event.stopPropagation()">    
+    <p id="popupText"></p>    
+    <button class="yes" onclick="jawabPopup(true)">YA</button>    
+    <button class="no" onclick="jawabPopup(false)">BELUM</button>    
+  </div>    
+</div>  <script type="module">    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import {
+getFirestore,
+collection,
+addDoc,
+getDocs,
+deleteDoc,
+doc,
+updateDoc,
+getDoc
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-    tabel.appendChild(tr);
-  });
+const role = localStorage.getItem("role") || "user";
+
+const firebaseConfig = {
+apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
+authDomain: "drum-26d1c.firebaseapp.com",
+projectId: "drum-26d1c",
+storageBucket: "drum-26d1c.appspot.com",
+messagingSenderId: "960892789351",
+appId: "1:960892789351:web:ca1c653c85cab59586eac2"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let selectedId = null;
+let selectedStatus = null;
+let modeCeklis = "";
+
+/* TAMBAH */
+window.tambahData = async function() {
+
+if(role !== "admin") return;
+
+const nama = document.getElementById("nama").value.toUpperCase();
+const liter = parseFloat(document.getElementById("liter").value);
+
+if(!nama || !liter) return alert("Isi semua!");
+
+await addDoc(collection(db, "drum2"), {
+nama,
+liter,
+ceklis: false,
+dexlite: false,
+dexLock: liter < 100
+});
+
+loadData();
 }
 
-function tambahData() {
-  let nama = document.getElementById("nama").value;
-  let liter = document.getElementById("liter").value;
+/* LOAD */
+window.loadData = async function() {
 
-  if (!nama || !liter) return alert("Isi dulu!");
+const snap = await getDocs(collection(db, "drum2"));
+let html = "";
+let no = 1;
 
-  data.push({
-    nama,
-    liter,
-    solar: false,
-    dex: false
-  });
+snap.forEach((d) => {
 
-  simpan();
-  render();
+const data = d.data();    
 
-  document.getElementById("nama").value = "";
-  document.getElementById("liter").value = "";
+let dexClass = data.dexlite ? "dex-checked" : "";    
+let solarClass = data.ceklis ? "solar-checked" : "";    
+
+html += `    
+<tr>    
+  <td>${no++}</td>    
+  <td>${data.nama}</td>    
+
+  <td>    
+    ${    
+      role === "admin"    
+      ? `<input type="number" value="${data.liter}" onchange="updateLiter('${d.id}', this.value)">`    
+      : data.liter    
+    }    
+  </td>    
+
+  <td class="${dexClass}">    
+    <input type="checkbox"    
+      ${data.dexlite ? "checked" : ""}    
+      ${(role !== "user" || data.dexLock) ? "disabled" : ""}    
+      onchange="toggleDexlite('${d.id}', this.checked)">    
+
+    ${    
+      role === "admin"    
+      ? `<span onclick="toggleLock('${d.id}', ${data.dexLock})">    
+          ${data.dexLock ? "LOCK" : "OPEN"}    
+        </span>`    
+      : ""    
+    }    
+  </td>    
+
+  <td class="${solarClass}">    
+    <input type="checkbox"    
+      ${data.ceklis ? "checked" : ""}    
+      ${role === "admin" ? "disabled" : ""}    
+      onchange="toggleCeklis('${d.id}', this.checked)">    
+  </td>    
+
+  <td>    
+    ${role === "admin" ? `<button onclick="hapusData('${d.id}')">Hapus</button>` : ""}    
+  </td>    
+</tr>    
+`;
+
+});
+
+document.getElementById("tbody").innerHTML = html;
 }
 
-function editLiter(i, val) {
-  data[i].liter = val;
-  simpan();
+/* UPDATE LITER */
+window.updateLiter = async function(id, value){
+
+if(role !== "admin") return;
+
+const liter = parseFloat(value);
+if(!liter) return alert("Liter tidak valid");
+
+await updateDoc(doc(db,"drum2",id),{
+liter: liter,
+dexLock: liter < 100
+});
+
+loadData();
 }
 
-function hapus(i) {
-  data.splice(i, 1);
-  simpan();
-  render();
+/* DEX */
+window.toggleDexlite = async function(id, status){
+
+const snap = await getDoc(doc(db,"drum2",id));
+const data = snap.data();
+
+if(data.dexLock) return;
+if(role !== "user") return;
+
+selectedId = id;
+selectedStatus = status;
+modeCeklis = "dex";
+
+document.getElementById("popupText").innerText =
+status ? "Apakah DEX sudah terisi?" : "Yakin mau lepas ceklis DEX?";
+
+document.getElementById("popup").style.display = "flex";
 }
 
-function cekAksi(i, tipe, status) {
-  indexAksi = i;
-  tipeAksi = tipe;
+/* SOLAR */
+window.toggleCeklis = function(id, status){
 
-  document.getElementById("popupText").innerText =
-    status ? "Yakin mau ceklis?" : "Yakin mau lepas ceklis?";
+if(role !== "user") return;
 
-  document.getElementById("popup").style.display = "flex";
+selectedId = id;
+selectedStatus = status;
+modeCeklis = "solar";
 
-  // simpan sementara
-  data[i]["temp_" + tipe] = status;
+document.getElementById("popupText").innerText =
+status ? "Apakah SOLAR sudah terisi?" : "Yakin mau lepas ceklis SOLAR?";
+
+document.getElementById("popup").style.display = "flex";
 }
 
-function confirmAksi() {
-  data[indexAksi][tipeAksi] = data[indexAksi]["temp_" + tipeAksi];
-  delete data[indexAksi]["temp_" + tipeAksi];
+/* POPUP */
+window.jawabPopup = async function(jawab){
 
-  simpan();
-  render();
-  closePopup();
+document.getElementById("popup").style.display = "none";
+
+if(!jawab){
+loadData();
+return;
 }
 
-function closePopup() {
-  document.getElementById("popup").style.display = "none";
+if(modeCeklis === "dex"){
+await updateDoc(doc(db,"drum2",selectedId),{
+dexlite: selectedStatus
+});
+} else {
+await updateDoc(doc(db,"drum2",selectedId),{
+ceklis: selectedStatus
+});
 }
 
-render();
-</script>
+loadData();
+}
 
-</body>
-</html>
+/* BLOCK ESC */
+document.addEventListener("keydown", function(e){
+if(e.key === "Escape"){
+e.preventDefault();
+}
+});
+
+/* LOCK */
+window.toggleLock = async function(id, current){
+
+if(role !== "admin") return;
+
+await updateDoc(doc(db,"drum2",id),{
+dexLock: !current
+});
+
+loadData();
+}
+
+/* DELETE */
+window.hapusData = async function(id){
+
+if(role !== "admin") return;
+
+await deleteDoc(doc(db,"drum2",id));
+loadData();
+}
+
+/* LOGOUT */
+window.logout = function(){
+localStorage.removeItem("role");
+location.href = "index.html";
+}
+
+loadData();
+
+</script>  </body>
+
+</html>    
