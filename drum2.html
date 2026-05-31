@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>DATA UMUM</title>
+<title>UMUM</title>
 
 <style>
 body {
@@ -15,12 +15,13 @@ body {
 h2 { text-align: center; }
 
 input {
-  padding: 6px;
+  padding: 8px;
   margin: 5px;
+  font-size: 14px;
 }
 
 #nama { width: 50%; }
-#liter { width: 70px; }
+#liter { width: 120px; } /* DIPERKECIL */
 
 button {
   padding: 6px;
@@ -41,30 +42,64 @@ th, td {
   text-align: center;
 }
 
-/* ukuran kolom */
-th:nth-child(1), td:nth-child(1) { width: 40px; }
-th:nth-child(3), td:nth-child(3) { width: 80px; }
+/* KHUSUS KOLOM LITER */
+td:nth-child(3), th:nth-child(3) {
+  width: 90px;
+}
 
-/* warna */
-.dex-active {
-  background: #00ff88;
+/* INPUT LITER DI TABEL */
+td input[type="number"] {
+  width: 70px;
+  padding: 4px;
+  font-size: 13px;
+}
+
+.dex-checked {
+  background: #00ff99;
   color: black;
   font-weight: bold;
 }
 
-.solar-active {
+.solar-checked {
   background: orange;
   color: black;
   font-weight: bold;
 }
 
-.lock-on { color: red; font-weight: bold; cursor: pointer; }
-.lock-off { color: cyan; font-weight: bold; cursor: pointer; }
-
 input[type="checkbox"] {
   width: 18px;
   height: 18px;
 }
+
+.popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0,0,0,0.7);
+}
+
+.popup-box {
+  background: #222;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.popup-box button {
+  padding: 8px 15px;
+  margin: 5px;
+  border: none;
+  cursor: pointer;
+}
+
+.yes { background: limegreen; }
+.no { background: red; color: white; }
+
 </style>
 </head>
 
@@ -78,6 +113,7 @@ input[type="checkbox"] {
 
 <input type="text" id="nama" placeholder="Nama">
 <input type="number" id="liter" placeholder="Liter">
+
 <button class="add" onclick="tambahData()">Tambah Data</button>
 
 <table>
@@ -95,10 +131,17 @@ input[type="checkbox"] {
 <tbody id="tbody"></tbody>
 </table>
 
+<div id="popup" class="popup">
+  <div class="popup-box" onclick="event.stopPropagation()">
+    <p id="popupText"></p>
+    <button class="yes" onclick="jawabPopup(true)">YA</button>
+    <button class="no" onclick="jawabPopup(false)">BELUM</button>
+  </div>
+</div>
+
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-
 import {
   getFirestore,
   collection,
@@ -106,27 +149,28 @@ import {
   getDocs,
   deleteDoc,
   doc,
-  updateDoc
+  updateDoc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const role = localStorage.getItem("role") || "user";
 
-if(!localStorage.getItem("role")){
-  alert("Login dulu!");
-  location.href = "index.html";
-}
-
 const firebaseConfig = {
-  apiKey: "ISI_API_KEY",
-  authDomain: "ISI_AUTH",
-  projectId: "ISI_PROJECT_ID"
+  apiKey: "ISI PUNYA ANDA",
+  authDomain: "ISI",
+  projectId: "ISI",
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* TAMBAH DATA */
+let selectedId = null;
+let selectedStatus = null;
+let modeCeklis = "";
+
+/* TAMBAH */
 window.tambahData = async function() {
+
   if(role !== "admin") return;
 
   const nama = document.getElementById("nama").value.toUpperCase();
@@ -145,69 +189,46 @@ window.tambahData = async function() {
   loadData();
 }
 
-/* LOAD DATA */
+/* LOAD */
 window.loadData = async function() {
 
   const snap = await getDocs(collection(db, "drum2"));
-
-  let dataArr = [];
-
-  snap.forEach((d)=>{
-    dataArr.push({
-      id: d.id,
-      ...d.data()
-    });
-  });
-
   let html = "";
+  let no = 1;
 
-  dataArr.forEach((data, index)=>{
+  snap.forEach((d) => {
 
-    let dexClass = data.dexlite ? "dex-active" : "";
-    let solarClass = data.ceklis ? "solar-active" : "";
-
-    let lockText = data.dexLock ? "LOCK" : "OPEN";
-    let lockClass = data.dexLock ? "lock-on" : "lock-off";
+    const data = d.data();
 
     html += `
     <tr>
-      <td>${index + 1}</td>
-
+      <td>${no++}</td>
       <td>${data.nama}</td>
 
       <td>
         ${
           role === "admin"
-          ? `<input type="number" value="${data.liter}" style="width:60px"
-              onchange="editLiter('${data.id}', this.value)">`
+          ? `<input type="number" value="${data.liter}" onchange="updateLiter('${d.id}', this.value)">`
           : data.liter
         }
       </td>
 
-      <td class="${dexClass}">
+      <td class="${data.dexlite ? "dex-checked" : ""}">
         <input type="checkbox"
           ${data.dexlite ? "checked" : ""}
           ${(role !== "user" || data.dexLock) ? "disabled" : ""}
-          onchange="toggleDexlite('${data.id}', this.checked)">
-
-        ${
-          role === "admin"
-          ? `<span onclick="toggleLock('${data.id}', ${data.dexLock})" class="${lockClass}">
-              ${lockText}
-            </span>`
-          : ""
-        }
+          onchange="toggleDexlite('${d.id}', this.checked)">
       </td>
 
-      <td class="${solarClass}">
+      <td class="${data.ceklis ? "solar-checked" : ""}">
         <input type="checkbox"
           ${data.ceklis ? "checked" : ""}
           ${role === "admin" ? "disabled" : ""}
-          onchange="toggleCeklis('${data.id}', this.checked)">
+          onchange="toggleCeklis('${d.id}', this.checked)">
       </td>
 
       <td>
-        ${role === "admin" ? `<button onclick="hapusData('${data.id}')">Hapus</button>` : ""}
+        ${role === "admin" ? `<button onclick="hapusData('${d.id}')">Hapus</button>` : ""}
       </td>
     </tr>
     `;
@@ -216,100 +237,89 @@ window.loadData = async function() {
   document.getElementById("tbody").innerHTML = html;
 }
 
-/* POPUP */
-function popupConfirm(pesan){
-  return new Promise((resolve)=>{
-    let div = document.createElement("div");
+/* UPDATE LITER */
+window.updateLiter = async function(id, value){
 
-    div.innerHTML = `
-    <div style="
-      position:fixed;
-      top:0;left:0;
-      width:100%;height:100%;
-      background:rgba(0,0,0,0.8);
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      z-index:9999;">
-      
-      <div style="background:#222;padding:20px;border-radius:10px;text-align:center;">
-        <p>${pesan}</p>
-        <button id="ya">YA</button>
-        <button id="tidak">BATAL</button>
-      </div>
-    </div>
-    `;
-
-    document.body.appendChild(div);
-
-    div.querySelector("#ya").onclick = ()=>{ div.remove(); resolve(true); }
-    div.querySelector("#tidak").onclick = ()=>{ div.remove(); resolve(false); }
-  });
-}
-
-/* LOGIC */
-window.toggleDexlite = async function(id, status){
-  if(role !== "user") return;
-
-  let ok = await popupConfirm(
-    status ? "Apakah DEX sudah terisi?" : "Yakin lepas DEX?"
-  );
-
-  if(!ok) return loadData();
-
-  await updateDoc(doc(db,"drum2",id),{
-    dexlite: status
-  });
-
-  loadData();
-}
-
-window.toggleCeklis = async function(id, status){
-  if(role !== "user") return;
-
-  let ok = await popupConfirm(
-    status ? "Apakah SOLAR sudah terisi?" : "Yakin lepas SOLAR?"
-  );
-
-  if(!ok) return loadData();
-
-  await updateDoc(doc(db,"drum2",id),{
-    ceklis: status
-  });
-
-  loadData();
-}
-
-window.toggleLock = async function(id, current){
   if(role !== "admin") return;
 
-  await updateDoc(doc(db,"drum2",id),{
-    dexLock: !current
-  });
-
-  loadData();
-}
-
-window.editLiter = async function(id, value){
-  if(role !== "admin") return;
-
-  let liter = parseFloat(value);
+  const liter = parseFloat(value);
+  if(!liter) return alert("Liter tidak valid");
 
   await updateDoc(doc(db,"drum2",id),{
-    liter,
+    liter: liter,
     dexLock: liter < 100
   });
 
   loadData();
 }
 
+/* DEX */
+window.toggleDexlite = async function(id, status){
+
+  const snap = await getDoc(doc(db,"drum2",id));
+  const data = snap.data();
+
+  if(data.dexLock) return;
+  if(role !== "user") return;
+
+  selectedId = id;
+  selectedStatus = status;
+  modeCeklis = "dex";
+
+  document.getElementById("popupText").innerText =
+    status ? "Apakah DEX sudah terisi?" : "Yakin mau lepas ceklis DEX?";
+
+  document.getElementById("popup").style.display = "flex";
+}
+
+/* SOLAR */
+window.toggleCeklis = function(id, status){
+
+  if(role !== "user") return;
+
+  selectedId = id;
+  selectedStatus = status;
+  modeCeklis = "solar";
+
+  document.getElementById("popupText").innerText =
+    status ? "Apakah SOLAR sudah terisi?" : "Yakin mau lepas ceklis SOLAR?";
+
+  document.getElementById("popup").style.display = "flex";
+}
+
+/* POPUP */
+window.jawabPopup = async function(jawab){
+
+  document.getElementById("popup").style.display = "none";
+
+  if(!jawab){
+    loadData();
+    return;
+  }
+
+  if(modeCeklis === "dex"){
+    await updateDoc(doc(db,"drum2",selectedId),{
+      dexlite: selectedStatus
+    });
+  } else {
+    await updateDoc(doc(db,"drum2",selectedId),{
+      ceklis: selectedStatus
+    });
+  }
+
+  loadData();
+}
+
+/* LOCK */
 window.hapusData = async function(id){
+
   if(role !== "admin") return;
 
   await deleteDoc(doc(db,"drum2",id));
   loadData();
 }
 
+/* LOGOUT */
 window.logout = function(){
   localStorage.removeItem("role");
   location.href = "index.html";
