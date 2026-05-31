@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>UMUM</title>
+<title>DATA UMUM</title>
 
 <style>
 body {
@@ -21,7 +21,7 @@ input {
 }
 
 #nama { width: 50%; }
-#liter { width: 80px; } /* 🔥 DIPERKECIL */
+#liter { width: 80px; }
 
 button {
   padding: 6px;
@@ -42,41 +42,34 @@ th, td {
   text-align: center;
 }
 
-th:nth-child(3), td:nth-child(3),
-th:nth-child(4), td:nth-child(4) {
-  width: 90px;
-}
+/* ukuran kolom */
+th:nth-child(1), td:nth-child(1) { width: 40px; }
+th:nth-child(3), td:nth-child(3) { width: 90px; }
 
-/* 🔥 WARNA STABILO */
+/* warna */
 .dex-active {
   background: #00ff88;
   color: black;
+  font-weight: bold;
 }
 
 .solar-active {
   background: orange;
   color: black;
+  font-weight: bold;
 }
 
 .lock-on { color: red; font-weight: bold; cursor: pointer; }
-.lock-off { color: blue; font-weight: bold; cursor: pointer; }
-
-.total-box {
-  margin: 10px 0;
-  padding: 10px;
-  background: #222;
-  border: 1px solid #555;
-}
+.lock-off { color: cyan; font-weight: bold; cursor: pointer; }
 
 input[type="checkbox"] {
   width: 20px;
   height: 20px;
-  accent-color: #00ccff;
   cursor: pointer;
 }
 </style>
-
 </head>
+
 <body>
 
 <h2>DATA UMUM</h2>
@@ -87,14 +80,7 @@ input[type="checkbox"] {
 
 <input type="text" id="nama" placeholder="Nama">
 <input type="number" id="liter" placeholder="Liter">
-
 <button class="add" onclick="tambahData()">Tambah Data</button>
-
-<div class="total-box">
-  Total Semua: <span id="totalSemua">0</span> Rp<br>
-  Total ✔: <span id="totalCeklis">0</span> L<br>
-  Total DEXLITE: <span id="totalDex">0</span> Rp
-</div>
 
 <table>
 <thead>
@@ -112,6 +98,7 @@ input[type="checkbox"] {
 </table>
 
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 
 import {
@@ -122,7 +109,6 @@ import {
   deleteDoc,
   doc,
   updateDoc,
-  getDoc,
   query,
   orderBy
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
@@ -130,7 +116,7 @@ import {
 const role = localStorage.getItem("role") || "user";
 
 if(!localStorage.getItem("role")){
-  alert("Silakan login dulu!");
+  alert("Login dulu!");
   location.href = "index.html";
 }
 
@@ -143,6 +129,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+/* TAMBAH DATA */
 window.tambahData = async function() {
   if(role !== "admin") return;
 
@@ -151,33 +138,32 @@ window.tambahData = async function() {
 
   if(!nama || !liter) return alert("Isi semua!");
 
+  const snap = await getDocs(collection(db, "drum2"));
+  const nomorBaru = snap.size + 1;
+
   await addDoc(collection(db, "drum2"), {
+    no: nomorBaru,
     nama,
     liter,
     ceklis: false,
     dexlite: false,
-    dexLock: liter < 100,
-    createdAt: Date.now() /* 🔥 untuk urutan */
+    dexLock: liter < 100
   });
 
   loadData();
 }
 
+/* LOAD DATA */
 window.loadData = async function() {
 
-  const q = query(collection(db, "drum2"), orderBy("createdAt", "asc"));
+  const q = query(collection(db, "drum2"), orderBy("no","asc"));
   const snap = await getDocs(q);
 
   let html = "";
-  let totalCeklis = 0;
-  let totalDex = 0;
-  let no = 1;
 
   snap.forEach((d) => {
-    const data = d.data();
 
-    if(data.ceklis) totalCeklis += data.liter;
-    if(data.dexlite) totalDex += 50000;
+    const data = d.data();
 
     let dexClass = data.dexlite ? "dex-active" : "";
     let solarClass = data.ceklis ? "solar-active" : "";
@@ -186,105 +172,89 @@ window.loadData = async function() {
     let lockClass = data.dexLock ? "lock-on" : "lock-off";
 
     html += `
-      <tr>
-        <td>${no++}</td>
+    <tr>
+      <td>${data.no}</td>
 
-        <td>${data.nama}</td>
+      <td>${data.nama}</td>
 
-        <td>
-          ${
-            role === "admin"
-            ? `<input type="number" value="${data.liter}" style="width:60px"
-                onchange="editLiter('${d.id}', this.value)">`
-            : data.liter
-          }
-        </td>
+      <td>
+        ${
+          role === "admin"
+          ? `<input type="number" value="${data.liter}" style="width:60px"
+              onchange="editLiter('${d.id}', this.value)">`
+          : data.liter
+        }
+      </td>
 
-        <td class="${dexClass}">
-          <input type="checkbox"
-            ${data.dexlite ? "checked" : ""}
-            ${(role !== "user" || data.dexLock) ? "disabled" : ""}
-            onchange="toggleDexlite('${d.id}', this.checked)">
-          
-          ${
-            role === "admin"
-              ? `<span onclick="toggleLock('${d.id}', ${data.dexLock})" class="${lockClass}">
-                  ${lockText}
-                </span>`
-              : ""
-          }
-        </td>
+      <td class="${dexClass}">
+        <input type="checkbox"
+          ${data.dexlite ? "checked" : ""}
+          ${(role !== "user" || data.dexLock) ? "disabled" : ""}
+          onchange="toggleDexlite('${d.id}', this.checked)">
 
-        <td class="${solarClass}">
-          <input type="checkbox"
-            ${data.ceklis ? "checked" : ""}
-            ${role === "admin" ? "disabled" : ""}
-            onchange="toggleCeklis('${d.id}', this.checked)">
-        </td>
+        ${
+          role === "admin"
+          ? `<span onclick="toggleLock('${d.id}', ${data.dexLock})" class="${lockClass}">
+              ${lockText}
+            </span>`
+          : ""
+        }
+      </td>
 
-        <td>
-          ${role === "admin" ? `<button onclick="hapusData('${d.id}')">Hapus</button>` : ""}
-        </td>
-      </tr>
+      <td class="${solarClass}">
+        <input type="checkbox"
+          ${data.ceklis ? "checked" : ""}
+          ${role === "admin" ? "disabled" : ""}
+          onchange="toggleCeklis('${d.id}', this.checked)">
+      </td>
+
+      <td>
+        ${role === "admin" ? `<button onclick="hapusData('${d.id}')">Hapus</button>` : ""}
+      </td>
+    </tr>
     `;
   });
 
   document.getElementById("tbody").innerHTML = html;
-
-  let totalSemua = (totalCeklis * 6800) + totalDex;
-
-  document.getElementById("totalSemua").innerText = totalSemua.toLocaleString("id-ID");
-  document.getElementById("totalCeklis").innerText = totalCeklis;
-  document.getElementById("totalDex").innerText = totalDex.toLocaleString("id-ID");
 }
 
-// ================= POPUP =================
-
+/* POPUP */
 function popupConfirm(pesan){
   return new Promise((resolve)=>{
     let div = document.createElement("div");
 
     div.innerHTML = `
-      <div style="
-        position:fixed;
-        top:0;left:0;
-        width:100%;
-        height:100%;
-        background:rgba(0,0,0,0.8);
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        z-index:9999;
-      ">
-        <div style="background:#222;padding:20px;border-radius:10px;text-align:center;">
-          <p>${pesan}</p>
-          <button id="ya">Ya</button>
-          <button id="tidak">Batal</button>
-        </div>
+    <div style="
+      position:fixed;
+      top:0;left:0;
+      width:100%;height:100%;
+      background:rgba(0,0,0,0.8);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      z-index:9999;">
+      
+      <div style="background:#222;padding:20px;border-radius:10px;text-align:center;">
+        <p>${pesan}</p>
+        <button id="ya">YA</button>
+        <button id="tidak">BATAL</button>
       </div>
+    </div>
     `;
 
     document.body.appendChild(div);
 
-    div.querySelector("#ya").onclick = ()=>{
-      div.remove();
-      resolve(true);
-    };
-
-    div.querySelector("#tidak").onclick = ()=>{
-      div.remove();
-      resolve(false);
-    };
+    div.querySelector("#ya").onclick = ()=>{ div.remove(); resolve(true); }
+    div.querySelector("#tidak").onclick = ()=>{ div.remove(); resolve(false); }
   });
 }
 
-// ================= LOGIC =================
-
+/* LOGIC */
 window.toggleDexlite = async function(id, status){
   if(role !== "user") return;
 
   let ok = await popupConfirm(
-    status ? "Apakah DEX sudah terisi?" : "Yakin lepas centang DEX?"
+    status ? "Apakah DEX sudah terisi?" : "Yakin lepas DEX?"
   );
 
   if(!ok) return loadData();
@@ -300,7 +270,7 @@ window.toggleCeklis = async function(id, status){
   if(role !== "user") return;
 
   let ok = await popupConfirm(
-    status ? "Apakah SOLAR sudah terisi?" : "Yakin lepas centang SOLAR?"
+    status ? "Apakah SOLAR sudah terisi?" : "Yakin lepas SOLAR?"
   );
 
   if(!ok) return loadData();
@@ -348,7 +318,7 @@ window.logout = function(){
 }
 
 loadData();
-</script>
 
+</script>
 </body>
 </html>
