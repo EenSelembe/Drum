@@ -119,10 +119,9 @@ input[type="checkbox"] {
 <tbody id="tbody"></tbody>
 </table>
 
-<!-- POPUP -->
 <div id="popup" class="popup">
   <div class="popup-box" onclick="event.stopPropagation()">
-    <p id="popupText">Pertanyaan</p>
+    <p id="popupText"></p>
     <button class="yes" onclick="jawabPopup(true)">YA</button>
     <button class="no" onclick="jawabPopup(false)">BELUM</button>
   </div>
@@ -199,7 +198,14 @@ window.loadData = async function() {
     <tr>
       <td>${no++}</td>
       <td>${data.nama}</td>
-      <td>${data.liter}</td>
+
+      <td>
+        ${
+          role === "admin"
+          ? `<input type="number" value="${data.liter}" onchange="updateLiter('${d.id}', this.value)">`
+          : data.liter
+        }
+      </td>
 
       <td class="${dexClass}">
         <input type="checkbox"
@@ -231,6 +237,22 @@ window.loadData = async function() {
   });
 
   document.getElementById("tbody").innerHTML = html;
+}
+
+/* UPDATE LITER */
+window.updateLiter = async function(id, value){
+
+  if(role !== "admin") return;
+
+  const liter = parseFloat(value);
+  if(!liter) return alert("Liter tidak valid");
+
+  await updateDoc(doc(db,"drum2",id),{
+    liter: liter,
+    dexLock: liter < 100
+  });
+
+  loadData();
 }
 
 /* DEX */
