@@ -42,11 +42,6 @@ button{
   cursor:pointer;
 }
 
-.copyBtn{
-  background:orange;
-  margin-bottom:10px;
-}
-
 table{
   width:100%;
   border-collapse:collapse;
@@ -77,8 +72,8 @@ th,td{
 }
 
 .editable{
-  color:#00d4ff;
   cursor:pointer;
+  color:#00d4ff;
 }
 </style>
 </head>
@@ -86,8 +81,6 @@ th,td{
 <body>
 
 <h2>DATA PERTALITE</h2>
-
-<button class="copyBtn" onclick="copyScript()">📋 COPY SCRIPT</button>
 
 <div id="roleBox">ROLE: <span id="roleText"></span></div>
 
@@ -122,13 +115,10 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
-  authDomain: "drum-26d1c.firebaseapp.com",
-  databaseURL: "https://drum-26d1c-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "drum-26d1c",
-  storageBucket: "drum-26d1c.firebasestorage.app",
-  messagingSenderId: "960892789351",
-  appId: "1:960892789351:web:ca1c653c85cab59586eac2"
+  apiKey: "APIKEY",
+  authDomain: "xxx.firebaseapp.com",
+  databaseURL: "https://xxx.asia-southeast1.firebasedatabase.app",
+  projectId: "xxx",
 };
 
 const app = initializeApp(firebaseConfig);
@@ -137,100 +127,92 @@ const db = getDatabase(app);
 let role = localStorage.getItem("role");
 
 if(!role){
-  alert("Silakan login dulu");
-  window.location.href = "index.html";
+  alert("Login dulu");
+  location.href="index.html";
 }
 
-document.getElementById("roleText").innerText = role.toUpperCase();
+document.getElementById("roleText").innerText = role;
 
-if(role === "admin"){
-  document.getElementById("adminForm").innerHTML = `
-    <h3>Tambah Data</h3>
+if(role==="admin"){
+  adminForm.innerHTML = `
     <input id="nama" placeholder="Nama">
     <input id="stok" type="number" placeholder="Stock">
-    <button onclick="tambah()">TAMBAH</button>
+    <button onclick="tambah()">Tambah</button>
   `;
 }
 
-let data = {};
+let data={};
 
-onValue(ref(db,"pertalite"), snap=>{
-  data = snap.val() || {};
+onValue(ref(db,"pertalite"),snap=>{
+  data=snap.val()||{};
   render();
 });
 
-function hitungTotal(){
-  let total = 0;
-  Object.values(data).forEach(d=>{
-    total += (d.stock - d.update);
-  });
-
-  document.getElementById("totalBox").innerHTML =
-    "Total Terpakai: " + total + " LITER<br>" +
-    "Total Uang: Rp " + (total * 10000).toLocaleString("id-ID");
+function totalTransaksi(arr){
+  return (arr||[]).reduce((a,b)=>a+b,0);
 }
 
 function render(){
-  let t = document.getElementById("tabel");
-  t.innerHTML = "";
-
-  let arr = Object.entries(data);
+  tabel.innerHTML="";
+  let arr=Object.entries(data);
 
   arr.forEach(([key,d],i)=>{
 
-    if(!d.transaksi) d.transaksi = [];
+    if(!d.transaksi) d.transaksi=[];
 
-    let kolom = "";
+    let kolom="";
 
     d.transaksi.forEach((v,j)=>{
-      kolom += `
+      kolom+=`
         <div>
-          <input class="small"
-            type="number"
-            value="${v}"
-            ${role==="user" ? `onchange="edit('${key}',${j},this)"` : "disabled"}>
-          ${role==="user" ? `<button class="del" onclick="hapusTransaksi('${key}',${j})">-</button>` : ""}
+          <input class="small" type="number" value="${v}"
+            ${role==="user" ? `onchange="edit('${key}',${j},this)"`:"disabled"}>
+          ${role==="user" ? `<button class="del" onclick="hapusTransaksi('${key}',${j})">-</button>`:""}
         </div>
       `;
     });
 
-    if(role==="user" && d.update > 0){
-      kolom += `
-        <input class="small"
-               type="number"
-               placeholder="+"
-               onchange="autoTransaksi('${key}',this)">
+    if(role==="user" && d.update>0){
+      kolom+=`
+        <input class="small" type="number" placeholder="+"
+          onchange="auto('${key}',this)">
       `;
     }
 
-    let red = d.update==0 ? "red" : "";
-
-    t.innerHTML += `
+    tabel.innerHTML+=`
       <tr>
         <td>${i+1}</td>
-        <td class="${role==="admin" ? "editable" : ""}" onclick="editNama('${key}')">${d.nama}</td>
-        <td>${d.stock}</td>
-        <td class="${red}">${d.update}</td>
+        <td class="${role==="admin"?"editable":""}" onclick="editNama('${key}')">${d.nama}</td>
+        <td class="${role==="admin"?"editable":""}" onclick="editStock('${key}')">${d.stock}</td>
+        <td>${d.update}</td>
         <td>${kolom}</td>
-        <td>
-          ${role==="admin" ? `<button class="del" onclick="hapus('${key}')">🗑️</button>` : ""}
-        </td>
+        <td>${role==="admin"?`<button class="del" onclick="hapus('${key}')">🗑️</button>`:""}</td>
       </tr>
     `;
   });
 
-  hitungTotal();
+  hitung();
 }
 
-window.tambah = function(){
-  let nama = document.getElementById("nama").value;
-  let stok = parseFloat(document.getElementById("stok").value);
+function hitung(){
+  let total=0;
+  Object.values(data).forEach(d=>{
+    total+=totalTransaksi(d.transaksi);
+  });
 
-  if(!nama || isNaN(stok)) return;
+  totalBox.innerHTML=
+    "Total: "+total+" L<br>Rp "+(total*10000).toLocaleString("id-ID");
+}
 
-  let newRef = push(ref(db,"pertalite"));
+window.tambah=function(){
+  let nama=nama.value;
+  let stok=parseFloat(stok.value);
 
-  set(newRef,{
+  if(!nama||isNaN(stok)) return;
+
+  let r=push(ref(db,"pertalite"));
+
+  set(r,{
     nama,
     stock:stok,
     update:stok,
@@ -241,84 +223,92 @@ window.tambah = function(){
   document.getElementById("stok").value="";
 };
 
-window.autoTransaksi = function(key,input){
-  let val = parseFloat(input.value);
-  let d = data[key];
+window.auto=function(key,input){
+  let val=parseFloat(input.value);
+  let d=data[key];
 
   if(isNaN(val)) return;
 
-  if(val > d.update){
-    alert("Tidak boleh melebihi sisa stock!");
+  if(val>d.update){
+    alert("Melebihi sisa!");
     input.value="";
     return;
   }
 
-  d.update -= val;
   d.transaksi.push(val);
+  d.update-=val;
 
-  set(ref(db,"pertalite/"+key), d);
-
+  set(ref(db,"pertalite/"+key),d);
   input.value="";
 };
 
-window.edit = function(key,j,input){
-  let val = parseFloat(input.value);
-  let d = data[key];
-  let old = d.transaksi[j];
+window.edit=function(key,i,input){
+  let val=parseFloat(input.value);
+  let d=data[key];
+  let old=d.transaksi[i];
 
   if(isNaN(val)) return;
 
-  let selisih = val - old;
+  let selisih=val-old;
 
-  if(selisih > d.update){
-    alert("Melebihi sisa stock!");
-    input.value = old;
+  if(selisih>d.update){
+    alert("Melebihi sisa!");
+    input.value=old;
     return;
   }
 
-  d.update -= selisih;
-  d.transaksi[j] = val;
+  d.transaksi[i]=val;
+  d.update-=selisih;
 
-  set(ref(db,"pertalite/"+key), d);
+  set(ref(db,"pertalite/"+key),d);
 };
 
-window.hapusTransaksi = function(key,j){
-  let d = data[key];
-  let val = d.transaksi[j];
+window.hapusTransaksi=function(key,i){
+  let d=data[key];
+  let val=d.transaksi[i];
 
-  d.update += val;
-  d.transaksi.splice(j,1);
+  d.update+=val;
+  d.transaksi.splice(i,1);
 
-  set(ref(db,"pertalite/"+key), d);
+  set(ref(db,"pertalite/"+key),d);
 };
 
-window.hapus = function(key){
-  remove(ref(db,"pertalite/"+key));
-};
+window.editNama=function(key){
+  if(role!=="admin")return;
 
-window.editNama = function(key){
-  if(role !== "admin") return;
+  let d=data[key];
+  let n=prompt("Nama:",d.nama);
 
-  let d = data[key];
-
-  let namaBaru = prompt("Edit Nama:", d.nama);
-  let stokBaru = prompt("Edit Stock:", d.stock);
-
-  if(namaBaru && !isNaN(parseFloat(stokBaru))){
-    d.nama = namaBaru;
-    d.stock = parseFloat(stokBaru);
-
-    if(d.update > d.stock) d.update = d.stock;
-
-    set(ref(db,"pertalite/"+key), d);
+  if(n){
+    d.nama=n;
+    set(ref(db,"pertalite/"+key),d);
   }
 };
 
-window.copyScript = function(){
-  navigator.clipboard.writeText(document.documentElement.outerHTML);
-  alert("Script berhasil di copy!");
+window.editStock=function(key){
+  if(role!=="admin")return;
+
+  let d=data[key];
+  let s=parseFloat(prompt("Stock:",d.stock));
+
+  if(isNaN(s)) return;
+
+  let total=totalTransaksi(d.transaksi);
+
+  if(s<total){
+    alert("Stock < transaksi!");
+    return;
+  }
+
+  d.stock=s;
+  d.update=s-total;
+
+  set(ref(db,"pertalite/"+key),d);
 };
 
+window.hapus=function(key){
+  remove(ref(db,"pertalite/"+key));
+};
 </script>
 
 </body>
