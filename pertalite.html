@@ -115,10 +115,14 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "APIKEY",
-  authDomain: "xxx.firebaseapp.com",
-  databaseURL: "https://xxx.asia-southeast1.firebasedatabase.app",
-  projectId: "xxx",
+  apiKey: "AIzaSyCgLz1_bFzcFzGEbYSIHRpoy3acReyuB7Y",
+  authDomain: "drum-26d1c.firebaseapp.com",
+  databaseURL: "https://drum-26d1c-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "drum-26d1c",
+  storageBucket: "drum-26d1c.firebasestorage.app",
+  messagingSenderId: "960892789351",
+  appId: "1:960892789351:web:ca1c653c85cab59586eac2",
+  measurementId: "G-Z85SMGMZT7"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -127,92 +131,98 @@ const db = getDatabase(app);
 let role = localStorage.getItem("role");
 
 if(!role){
-  alert("Login dulu");
-  location.href="index.html";
+  alert("Silakan login dulu");
+  window.location.href = "index.html";
 }
 
-document.getElementById("roleText").innerText = role;
+document.getElementById("roleText").innerText = role.toUpperCase();
 
-if(role==="admin"){
-  adminForm.innerHTML = `
+if(role === "admin"){
+  document.getElementById("adminForm").innerHTML = `
+    <h3>Tambah Data</h3>
     <input id="nama" placeholder="Nama">
     <input id="stok" type="number" placeholder="Stock">
-    <button onclick="tambah()">Tambah</button>
+    <button onclick="tambah()">TAMBAH</button>
   `;
 }
 
-let data={};
+let data = {};
 
-onValue(ref(db,"pertalite"),snap=>{
-  data=snap.val()||{};
+onValue(ref(db,"pertalite"), snap=>{
+  data = snap.val() || {};
   render();
 });
 
 function totalTransaksi(arr){
-  return (arr||[]).reduce((a,b)=>a+b,0);
+  return (arr || []).reduce((a,b)=>a+b,0);
+}
+
+function hitungTotal(){
+  let total = 0;
+  Object.values(data).forEach(d=>{
+    total += totalTransaksi(d.transaksi);
+  });
+
+  document.getElementById("totalBox").innerHTML =
+    "Total Terpakai: " + total + " LITER<br>" +
+    "Total Uang: Rp " + (total * 10000).toLocaleString("id-ID");
 }
 
 function render(){
-  tabel.innerHTML="";
-  let arr=Object.entries(data);
+  let t = document.getElementById("tabel");
+  t.innerHTML = "";
+
+  let arr = Object.entries(data);
 
   arr.forEach(([key,d],i)=>{
 
-    if(!d.transaksi) d.transaksi=[];
+    if(!d.transaksi) d.transaksi = [];
 
-    let kolom="";
+    let kolom = "";
 
     d.transaksi.forEach((v,j)=>{
-      kolom+=`
+      kolom += `
         <div>
           <input class="small" type="number" value="${v}"
-            ${role==="user" ? `onchange="edit('${key}',${j},this)"`:"disabled"}>
-          ${role==="user" ? `<button class="del" onclick="hapusTransaksi('${key}',${j})">-</button>`:""}
+            ${role==="user" ? `onchange="edit('${key}',${j},this)"` : "disabled"}>
+          ${role==="user" ? `<button class="del" onclick="hapusTransaksi('${key}',${j})">-</button>` : ""}
         </div>
       `;
     });
 
-    if(role==="user" && d.update>0){
-      kolom+=`
+    if(role==="user" && d.update > 0){
+      kolom += `
         <input class="small" type="number" placeholder="+"
-          onchange="auto('${key}',this)">
+               onchange="autoTransaksi('${key}',this)">
       `;
     }
 
-    tabel.innerHTML+=`
+    t.innerHTML += `
       <tr>
         <td>${i+1}</td>
         <td class="${role==="admin"?"editable":""}" onclick="editNama('${key}')">${d.nama}</td>
         <td class="${role==="admin"?"editable":""}" onclick="editStock('${key}')">${d.stock}</td>
         <td>${d.update}</td>
         <td>${kolom}</td>
-        <td>${role==="admin"?`<button class="del" onclick="hapus('${key}')">🗑️</button>`:""}</td>
+        <td>
+          ${role==="admin" ? `<button class="del" onclick="hapus('${key}')">🗑️</button>` : ""}
+        </td>
       </tr>
     `;
   });
 
-  hitung();
+  hitungTotal();
 }
 
-function hitung(){
-  let total=0;
-  Object.values(data).forEach(d=>{
-    total+=totalTransaksi(d.transaksi);
-  });
+window.tambah = function(){
+  let nama = document.getElementById("nama").value;
+  let stok = parseFloat(document.getElementById("stok").value);
 
-  totalBox.innerHTML=
-    "Total: "+total+" L<br>Rp "+(total*10000).toLocaleString("id-ID");
-}
+  if(!nama || isNaN(stok)) return;
 
-window.tambah=function(){
-  let nama=nama.value;
-  let stok=parseFloat(stok.value);
+  let newRef = push(ref(db,"pertalite"));
 
-  if(!nama||isNaN(stok)) return;
-
-  let r=push(ref(db,"pertalite"));
-
-  set(r,{
+  set(newRef,{
     nama,
     stock:stok,
     update:stok,
@@ -223,90 +233,90 @@ window.tambah=function(){
   document.getElementById("stok").value="";
 };
 
-window.auto=function(key,input){
-  let val=parseFloat(input.value);
-  let d=data[key];
-
+window.autoTransaksi = function(key,input){
+  let val = parseFloat(input.value);
   if(isNaN(val)) return;
 
-  if(val>d.update){
+  let d = data[key];
+
+  if(val > d.update){
     alert("Melebihi sisa!");
     input.value="";
     return;
   }
 
+  d.update -= val;
   d.transaksi.push(val);
-  d.update-=val;
 
-  set(ref(db,"pertalite/"+key),d);
+  set(ref(db,"pertalite/"+key), d);
   input.value="";
 };
 
-window.edit=function(key,i,input){
-  let val=parseFloat(input.value);
-  let d=data[key];
-  let old=d.transaksi[i];
-
+window.edit = function(key,j,input){
+  let val = parseFloat(input.value);
   if(isNaN(val)) return;
 
-  let selisih=val-old;
+  let d = data[key];
+  let old = d.transaksi[j];
 
-  if(selisih>d.update){
+  let selisih = val - old;
+
+  if(selisih > d.update){
     alert("Melebihi sisa!");
-    input.value=old;
+    input.value = old;
     return;
   }
 
-  d.transaksi[i]=val;
-  d.update-=selisih;
+  d.transaksi[j] = val;
+  d.update -= selisih;
 
-  set(ref(db,"pertalite/"+key),d);
+  set(ref(db,"pertalite/"+key), d);
 };
 
-window.hapusTransaksi=function(key,i){
-  let d=data[key];
-  let val=d.transaksi[i];
+window.hapusTransaksi = function(key,j){
+  let d = data[key];
+  let val = d.transaksi[j];
 
-  d.update+=val;
-  d.transaksi.splice(i,1);
+  d.update += val;
+  d.transaksi.splice(j,1);
 
-  set(ref(db,"pertalite/"+key),d);
+  set(ref(db,"pertalite/"+key), d);
 };
 
-window.editNama=function(key){
-  if(role!=="admin")return;
+window.editNama = function(key){
+  if(role !== "admin") return;
 
-  let d=data[key];
-  let n=prompt("Nama:",d.nama);
+  let d = data[key];
+  let namaBaru = prompt("Edit Nama:", d.nama);
 
-  if(n){
-    d.nama=n;
-    set(ref(db,"pertalite/"+key),d);
+  if(namaBaru){
+    d.nama = namaBaru;
+    set(ref(db,"pertalite/"+key), d);
   }
 };
 
-window.editStock=function(key){
-  if(role!=="admin")return;
+window.editStock = function(key){
+  if(role !== "admin") return;
 
-  let d=data[key];
-  let s=parseFloat(prompt("Stock:",d.stock));
+  let d = data[key];
+  let stokBaru = parseFloat(prompt("Edit Stock:", d.stock));
 
-  if(isNaN(s)) return;
+  if(isNaN(stokBaru)) return;
 
-  let total=totalTransaksi(d.transaksi);
+  let total = totalTransaksi(d.transaksi);
 
-  if(s<total){
-    alert("Stock < transaksi!");
+  if(stokBaru < total){
+    alert("Stock tidak boleh kurang dari total transaksi!");
     return;
   }
 
-  d.stock=s;
-  d.update=s-total;
+  d.stock = stokBaru;
+  d.update = stokBaru - total;
 
-  set(ref(db,"pertalite/"+key),d);
+  set(ref(db,"pertalite/"+key), d);
 };
 
-window.hapus=function(key){
+window.hapus = function(key){
   remove(ref(db,"pertalite/"+key));
 };
 </script>
