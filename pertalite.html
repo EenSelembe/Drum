@@ -42,6 +42,11 @@ button{
   cursor:pointer;
 }
 
+.copyBtn{
+  background:orange;
+  margin-bottom:10px;
+}
+
 table{
   width:100%;
   border-collapse:collapse;
@@ -70,12 +75,19 @@ th,td{
   background:red;
   color:white;
 }
+
+.editable{
+  color:#00d4ff;
+  cursor:pointer;
+}
 </style>
 </head>
 
 <body>
 
 <h2>DATA PERTALITE</h2>
+
+<button class="copyBtn" onclick="copyScript()">📋 COPY SCRIPT</button>
 
 <div id="roleBox">ROLE: <span id="roleText"></span></div>
 
@@ -116,8 +128,7 @@ const firebaseConfig = {
   projectId: "drum-26d1c",
   storageBucket: "drum-26d1c.firebasestorage.app",
   messagingSenderId: "960892789351",
-  appId: "1:960892789351:web:ca1c653c85cab59586eac2",
-  measurementId: "G-Z85SMGMZT7"
+  appId: "1:960892789351:web:ca1c653c85cab59586eac2"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -136,7 +147,7 @@ if(role === "admin"){
   document.getElementById("adminForm").innerHTML = `
     <h3>Tambah Data</h3>
     <input id="nama" placeholder="Nama">
-    <input id="stok" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="Stock">
+    <input id="stok" type="number" placeholder="Stock">
     <button onclick="tambah()">TAMBAH</button>
   `;
 }
@@ -176,8 +187,6 @@ function render(){
         <div>
           <input class="small"
             type="number"
-            inputmode="numeric"
-            pattern="[0-9]*"
             value="${v}"
             ${role==="user" ? `onchange="edit('${key}',${j},this)"` : "disabled"}>
           ${role==="user" ? `<button class="del" onclick="hapusTransaksi('${key}',${j})">-</button>` : ""}
@@ -189,8 +198,6 @@ function render(){
       kolom += `
         <input class="small"
                type="number"
-               inputmode="numeric"
-               pattern="[0-9]*"
                placeholder="+"
                onchange="autoTransaksi('${key}',this)">
       `;
@@ -201,7 +208,7 @@ function render(){
     t.innerHTML += `
       <tr>
         <td>${i+1}</td>
-        <td>${d.nama}</td>
+        <td class="${role==="admin" ? "editable" : ""}" onclick="editNama('${key}')">${d.nama}</td>
         <td>${d.stock}</td>
         <td class="${red}">${d.update}</td>
         <td>${kolom}</td>
@@ -236,13 +243,17 @@ window.tambah = function(){
 
 window.autoTransaksi = function(key,input){
   let val = parseFloat(input.value);
-  if(isNaN(val)) return;
-
   let d = data[key];
 
-  d.update -= val;
-  if(d.update < 0) d.update = 0;
+  if(isNaN(val)) return;
 
+  if(val > d.update){
+    alert("Tidak boleh melebihi sisa stock!");
+    input.value="";
+    return;
+  }
+
+  d.update -= val;
   d.transaksi.push(val);
 
   set(ref(db,"pertalite/"+key), d);
@@ -252,14 +263,20 @@ window.autoTransaksi = function(key,input){
 
 window.edit = function(key,j,input){
   let val = parseFloat(input.value);
-  if(isNaN(val)) return;
-
   let d = data[key];
   let old = d.transaksi[j];
 
-  d.update -= (val - old);
-  if(d.update < 0) d.update = 0;
+  if(isNaN(val)) return;
 
+  let selisih = val - old;
+
+  if(selisih > d.update){
+    alert("Melebihi sisa stock!");
+    input.value = old;
+    return;
+  }
+
+  d.update -= selisih;
   d.transaksi[j] = val;
 
   set(ref(db,"pertalite/"+key), d);
@@ -277,6 +294,29 @@ window.hapusTransaksi = function(key,j){
 
 window.hapus = function(key){
   remove(ref(db,"pertalite/"+key));
+};
+
+window.editNama = function(key){
+  if(role !== "admin") return;
+
+  let d = data[key];
+
+  let namaBaru = prompt("Edit Nama:", d.nama);
+  let stokBaru = prompt("Edit Stock:", d.stock);
+
+  if(namaBaru && !isNaN(parseFloat(stokBaru))){
+    d.nama = namaBaru;
+    d.stock = parseFloat(stokBaru);
+
+    if(d.update > d.stock) d.update = d.stock;
+
+    set(ref(db,"pertalite/"+key), d);
+  }
+};
+
+window.copyScript = function(){
+  navigator.clipboard.writeText(document.documentElement.outerHTML);
+  alert("Script berhasil di copy!");
 };
 
 </script>
