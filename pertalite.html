@@ -75,6 +75,12 @@ th,td{
   cursor:pointer;
   color:#00d4ff;
 }
+
+/* TAMBAHAN WARNA BARIS HABIS */
+.habis{
+  background:#8b0000 !important;
+  color:white;
+}
 </style>
 </head>
 
@@ -197,8 +203,11 @@ function render(){
       `;
     }
 
+    /* TAMBAHAN LOGIKA WARNA MERAH */
+    let rowClass = d.update <= 0 ? "habis" : "";
+
     t.innerHTML += `
-      <tr>
+      <tr class="${rowClass}">
         <td>${i+1}</td>
         <td class="${role==="admin"?"editable":""}" onclick="editNama('${key}')">${d.nama}</td>
         <td class="${role==="admin"?"editable":""}" onclick="editStock('${key}')">${d.stock}</td>
